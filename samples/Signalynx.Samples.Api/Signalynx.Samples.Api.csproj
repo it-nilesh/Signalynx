@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Signalynx.Abstractions/Signalynx.Abstractions.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Core/Signalynx.Core.csproj" />
+    <ProjectReference Include="../../src/Signalynx.DependencyInjection/Signalynx.DependencyInjection.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Logging/Signalynx.Logging.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Messaging/Signalynx.Messaging.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Transports.InMemory/Signalynx.Transports.InMemory.csproj" />
+    <ProjectReference Include="../../src/Signalynx.SourceGeneration/Signalynx.SourceGeneration.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>

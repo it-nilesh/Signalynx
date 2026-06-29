@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Description>Microsoft.Extensions.DependencyInjection integration for Signalynx.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Signalynx.Core/Signalynx.Core.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>

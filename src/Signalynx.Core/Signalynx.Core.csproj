@@ -1,0 +1,10 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Description>Default high-performance in-process implementation for Signalynx.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Signalynx.Abstractions/Signalynx.Abstractions.csproj" />
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,233 @@
+using BenchmarkDotNet.Attributes;
+using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
+
+namespace Signalynx.Performance;
+
+[MemoryDiagnoser]
+[SimpleJob]
+public class DispatchBenchmarks
+{
+    private ISignalynx _mediator = null!;
+    private BenchmarkHandler _handler = null!;
+    private BenchmarkCommand _command = null!;
+    private BenchmarkNotification _notification = null!;
+    private BenchmarkManyNotification _manyNotification = null!;
+    private BenchmarkEvent _event = null!;
+    private BenchmarkManyEvent _manyEvent = null!;
+    private MethodInfo _reflectedMethod = null!;
+    private Func<BenchmarkCommand, CancellationToken, ValueTask<int>> _cachedDelegate = null!;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        var services = new ServiceCollection();
+        services.AddSignalynx(options =>
+            options.RegisterServicesFromAssembly(typeof(DispatchBenchmarks).Assembly));
+        var provider = services.BuildServiceProvider();
+        _mediator = provider.GetRequiredService<ISignalynx>();
+        _handler = (BenchmarkHandler)provider.GetRequiredService<ICommandHandler<BenchmarkCommand, int>>();
+        _command = new BenchmarkCommand(42);
+        _notification = new BenchmarkNotification();
+        _manyNotification = new BenchmarkManyNotification();
+        _event = new BenchmarkEvent();
+        _manyEvent = new BenchmarkManyEvent();
+        _reflectedMethod = typeof(BenchmarkHandler).GetMethod(nameof(BenchmarkHandler.HandleAsync))
+            ?? throw new InvalidOperationException();
+        _cachedDelegate = _handler.HandleAsync;
+    }
+
+    [Benchmark(Baseline = true)]
+    public ValueTask<int> DirectCall() => _handler.HandleAsync(_command);
+
+    [Benchmark]
+    public ValueTask<int> CachedDelegateCall() => _cachedDelegate(_command, default);
+
+    [Benchmark]
+    public ValueTask<int> ReflectionInvoke() =>
+        (ValueTask<int>)_reflectedMethod.Invoke(_handler, [_command, default(CancellationToken)])!;
+
+    [Benchmark]
+    public ValueTask AsyncCommandWithoutResult() =>
+        _mediator.DispatchAsync(new BenchmarkVoidCommand());
+
+    [Benchmark]
+    public ValueTask<int> AsyncValueTaskCommand() =>
+        _mediator.DispatchAsync<BenchmarkCommand, int>(_command);
+
+    [Benchmark]
+    public ValueTask<int> Query() =>
+        _mediator.QueryAsync<BenchmarkQuery, int>(new BenchmarkQuery(42));
+
+    [Benchmark]
+    public ValueTask<int> Request() =>
+        _mediator.RequestAsync<BenchmarkRequest, int>(new BenchmarkRequest(42));
+
+    [Benchmark]
+    public ValueTask NotificationOneHandler() =>
+        _mediator.PublishAsync(_notification);
+
+    [Benchmark]
+    public ValueTask NotificationMultipleHandlers() =>
+        _mediator.PublishAsync(_manyNotification);
+
+    [Benchmark]
+    public ValueTask EventOneHandler() =>
+        _mediator.PublishEventAsync(_event);
+
+    [Benchmark]
+    public ValueTask EventMultipleHandlers() =>
+        _mediator.PublishEventAsync(_manyEvent);
+}
+
+[MemoryDiagnoser]
+public class PipelineBenchmarks
+{
+    private ISignalynx _oneBehavior = null!;
+    private ISignalynx _threeBehaviors = null!;
+    private BenchmarkCommand _command = null!;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _oneBehavior = Build(1);
+        _threeBehaviors = Build(3);
+        _command = new BenchmarkCommand(42);
+    }
+
+    [Benchmark]
+    public ValueTask<int> OneBehavior() =>
+        _oneBehavior.DispatchAsync<BenchmarkCommand, int>(_command);
+
+    [Benchmark]
+    public ValueTask<int> ThreeBehaviors() =>
+        _threeBehaviors.DispatchAsync<BenchmarkCommand, int>(_command);
+
+    private static ISignalynx Build(int behaviorCount)
+    {
+        var services = new ServiceCollection();
+        services.AddSignalynx(options =>
+        {
+            options.RegisterServicesFromAssembly(typeof(PipelineBenchmarks).Assembly);
+            for (var i = 0; i < behaviorCount; i++)
+            {
+                options.AddOpenBehavior(typeof(PassThroughBehavior<,>));
+            }
+        });
+        return services.BuildServiceProvider().GetRequiredService<ISignalynx>();
+    }
+}
+
+public sealed record BenchmarkCommand(int Value) : ICommand<int>;
+public sealed record BenchmarkVoidCommand : ICommand;
+public sealed record BenchmarkQuery(int Value) : IQuery<int>;
+public sealed record BenchmarkRequest(int Value) : IRequest<int>;
+public sealed record BenchmarkNotification : INotification;
+public sealed record BenchmarkManyNotification : INotification;
+public sealed record BenchmarkEvent : IEvent;
+public sealed record BenchmarkManyEvent : IEvent;
+
+public sealed class BenchmarkHandler : ICommandHandler<BenchmarkCommand, int>
+{
+    public ValueTask<int> HandleAsync(
+        BenchmarkCommand command,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult(command.Value);
+}
+
+public sealed class BenchmarkVoidHandler : ICommandHandler<BenchmarkVoidCommand>
+{
+    public ValueTask HandleAsync(
+        BenchmarkVoidCommand command,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.CompletedTask;
+}
+
+public sealed class BenchmarkQueryHandler : IQueryHandler<BenchmarkQuery, int>
+{
+    public ValueTask<int> HandleAsync(
+        BenchmarkQuery query,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult(query.Value);
+}
+
+public sealed class BenchmarkRequestHandler : IRequestHandler<BenchmarkRequest, int>
+{
+    public ValueTask<int> HandleAsync(
+        BenchmarkRequest request,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult(request.Value);
+}
+
+public sealed class BenchmarkManyNotificationHandlerOne : INotificationHandler<BenchmarkManyNotification>
+{
+    public ValueTask HandleAsync(
+        BenchmarkManyNotification notification,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.CompletedTask;
+}
+
+public sealed class BenchmarkManyNotificationHandlerTwo : INotificationHandler<BenchmarkManyNotification>
+{
+    public ValueTask HandleAsync(
+        BenchmarkManyNotification notification,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.CompletedTask;
+}
+
+public sealed class BenchmarkManyNotificationHandlerThree : INotificationHandler<BenchmarkManyNotification>
+{
+    public ValueTask HandleAsync(
+        BenchmarkManyNotification notification,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.CompletedTask;
+}
+
+public sealed class BenchmarkEventHandler : IEventHandler<BenchmarkEvent>
+{
+    public ValueTask HandleAsync(
+        BenchmarkEvent domainEvent,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.CompletedTask;
+}
+
+public sealed class BenchmarkManyEventHandlerOne : IEventHandler<BenchmarkManyEvent>
+{
+    public ValueTask HandleAsync(
+        BenchmarkManyEvent domainEvent,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.CompletedTask;
+}
+
+public sealed class BenchmarkManyEventHandlerTwo : IEventHandler<BenchmarkManyEvent>
+{
+    public ValueTask HandleAsync(
+        BenchmarkManyEvent domainEvent,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.CompletedTask;
+}
+
+public sealed class BenchmarkManyEventHandlerThree : IEventHandler<BenchmarkManyEvent>
+{
+    public ValueTask HandleAsync(
+        BenchmarkManyEvent domainEvent,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.CompletedTask;
+}
+
+public sealed class BenchmarkNotificationHandler : INotificationHandler<BenchmarkNotification>
+{
+    public ValueTask HandleAsync(
+        BenchmarkNotification notification,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.CompletedTask;
+}
+
+public sealed class PassThroughBehavior<TRequest, TResult> : IPipelineBehavior<TRequest, TResult>
+{
+    public ValueTask<TResult> HandleAsync(
+        TRequest request,
+        RequestHandlerDelegate<TResult> next,
+        CancellationToken cancellationToken = default) =>
+        next();
+}

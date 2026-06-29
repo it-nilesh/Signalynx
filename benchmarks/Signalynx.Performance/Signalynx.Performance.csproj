@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Signalynx.Abstractions/Signalynx.Abstractions.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Core/Signalynx.Core.csproj" />
+    <ProjectReference Include="../../src/Signalynx.DependencyInjection/Signalynx.DependencyInjection.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Messaging/Signalynx.Messaging.csproj" />
+  </ItemGroup>
+</Project>

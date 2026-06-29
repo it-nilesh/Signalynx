@@ -1,0 +1,21 @@
+<Solution>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Signalynx.Performance/Signalynx.Performance.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Signalynx.Samples.Api/Signalynx.Samples.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Signalynx.Abstractions/Signalynx.Abstractions.csproj" />
+    <Project Path="src/Signalynx.Core/Signalynx.Core.csproj" />
+    <Project Path="src/Signalynx.DependencyInjection/Signalynx.DependencyInjection.csproj" />
+    <Project Path="src/Signalynx.Logging/Signalynx.Logging.csproj" />
+    <Project Path="src/Signalynx.Messaging/Signalynx.Messaging.csproj" />
+    <Project Path="src/Signalynx.SourceGeneration/Signalynx.SourceGeneration.csproj" />
+    <Project Path="src/Signalynx.Transports.InMemory/Signalynx.Transports.InMemory.csproj" />
+    <Project Path="src/Signalynx.Validation/Signalynx.Validation.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Signalynx.Tests/Signalynx.Tests.csproj" />
+  </Folder>
+</Solution>

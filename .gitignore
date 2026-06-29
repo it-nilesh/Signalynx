@@ -1,0 +1,11 @@
+bin/
+obj/
+artifacts/
+BenchmarkDotNet.Artifacts/
+.idea/
+.vs/
+.vscode/
+*.user
+*.suo
+TestResults/
+coverage/
