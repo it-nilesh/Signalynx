@@ -398,6 +398,26 @@ process restart behavior.
 
 ## Production Observability
 
+Enable core mediator diagnostics when you want dispatch and publish telemetry:
+
+```csharp
+builder.Services.AddSignalynx(options =>
+{
+    options.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    options.EnableDiagnostics = true;
+});
+```
+
+Signalynx emits dispatch and publish activities through the `Signalynx`
+activity source and metrics through the `Signalynx` meter:
+
+- `signalynx.dispatch.calls`
+- `signalynx.dispatch.failures`
+- `signalynx.dispatch.duration`
+- `signalynx.publish.calls`
+- `signalynx.publish.failures`
+- `signalynx.publish.duration`
+
 Signalynx emits these metrics through the `Signalynx.Messaging` meter:
 
 - `signalynx.messaging.enqueued`
@@ -411,8 +431,13 @@ OpenTelemetry example:
 
 ```csharp
 builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing =>
+    {
+        tracing.AddSource(SignalynxDiagnostics.ActivitySourceName);
+    })
     .WithMetrics(metrics =>
     {
+        metrics.AddMeter(SignalynxDiagnostics.MeterName);
         metrics.AddMeter(SignalynxMessagingDiagnostics.MeterName);
         metrics.AddPrometheusExporter();
     });
@@ -494,7 +519,7 @@ dotnet run --project samples/Signalynx.Samples.Api
 dotnet pack src/Signalynx.Core -c Release
 ```
 
-BenchmarkDotNet scenarios include direct calls, cached delegates, reflection fallback, `ValueTask` dispatch, commands, queries, requests, notifications, events, and one/three behavior pipelines. Always run benchmarks in Release mode without a debugger.
+BenchmarkDotNet scenarios include direct calls, cached delegates, reflection fallback, `ValueTask` dispatch, commands, queries, requests, notifications, events, diagnostics overhead, sequential/parallel publishing, one/three behavior pipelines, serialization, and enqueue cost. Dispatch, pipeline, diagnostics, and messaging benchmarks emit disassembly reports through BenchmarkDotNet. Always run benchmarks in Release mode without a debugger.
 
 ## Testing
 
@@ -511,14 +536,12 @@ Create a `ServiceCollection`, call `AddSignalynx`, and resolve `ISignalynx`. Tes
 - Optional source-generated registration
 - BenchmarkDotNet with allocation and GC measurements
 
-Options such as `EnableDelegateCaching` and `EnableDiagnostics` reserve stable configuration points for upcoming optimized dispatch caches and diagnostics. They do not currently alter the typed dispatch path.
+`EnableDelegateCaching` reserves a stable configuration point for upcoming optimized dispatch caches. `EnableDiagnostics` turns on core dispatch and publish activities and metrics.
 
 ## Roadmap
 
 - Generated direct-dispatch and pipeline delegates
 - NativeAOT/trimming annotations and test matrix
-- Expanded benchmark comparisons and disassembly reports
-- Diagnostic events and OpenTelemetry integration
 - RabbitMQ, Azure Service Bus, Amazon SQS, and Kafka transport adapters
 - SQL Server and PostgreSQL durable inbox/outbox providers
 - .NET 10 target after the support baseline is adopted
