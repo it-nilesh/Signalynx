@@ -9,6 +9,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
@@ -23,6 +24,7 @@
     <ProjectReference Include="../../src/Signalynx.Logging/Signalynx.Logging.csproj" />
     <ProjectReference Include="../../src/Signalynx.Validation/Signalynx.Validation.csproj" />
     <ProjectReference Include="../../src/Signalynx.Messaging/Signalynx.Messaging.csproj" />
+    <ProjectReference Include="../../src/Signalynx.SourceGeneration/Signalynx.SourceGeneration.csproj" />
     <ProjectReference Include="../../src/Signalynx.Stores.PostgreSql/Signalynx.Stores.PostgreSql.csproj" />
     <ProjectReference Include="../../src/Signalynx.Stores.SqlServer/Signalynx.Stores.SqlServer.csproj" />
     <ProjectReference Include="../../src/Signalynx.Transports.AmazonSqs/Signalynx.Transports.AmazonSqs.csproj" />

@@ -551,10 +551,22 @@ handler idempotency, deployment, and operations.
 Add `Signalynx.SourceGeneration` as an analyzer to generate:
 
 ```csharp
-services.AddSignalynxGeneratedHandlers();
+services.AddSignalynxGenerated(options =>
+{
+    options.AddOpenBehavior(typeof(LoggingBehavior<,>));
+});
 ```
 
-The generator emits DI registrations, a static handler map, and duplicate single-handler diagnostic `SLX001`. Runtime assembly scanning remains fully supported. Compile-time pipeline composition and direct generated dispatch are roadmap items.
+The generator emits DI registrations, `HandlerDescriptor` metadata, a static
+handler map, and duplicate single-handler diagnostic `SLX001`.
+`AddSignalynxGenerated` registers the generated descriptors without runtime
+assembly scanning, which is the preferred path for trimmed and NativeAOT
+applications.
+
+Runtime assembly scanning remains fully supported through `AddSignalynx(options
+=> options.RegisterServicesFromAssembly(...))`, but those APIs are annotated
+with `RequiresUnreferencedCode` because linkers cannot statically preserve every
+handler discovered by reflection.
 
 ## Minimal APIs and ASP.NET Core
 
@@ -579,7 +591,7 @@ dotnet run --project samples/Signalynx.Samples.Api
 dotnet pack src/Signalynx.Core -c Release
 ```
 
-BenchmarkDotNet scenarios include direct calls, cached delegates, reflection fallback, `ValueTask` dispatch, commands, queries, requests, notifications, events, diagnostics overhead, sequential/parallel publishing, one/three behavior pipelines, serialization, and enqueue cost. Dispatch, pipeline, diagnostics, and messaging benchmarks emit disassembly reports through BenchmarkDotNet. Always run benchmarks in Release mode without a debugger.
+BenchmarkDotNet scenarios include direct calls, cached delegates, reflection fallback, `ValueTask` dispatch, generated descriptor dispatch, one-million generated dispatch load tests, commands, queries, requests, notifications, events, diagnostics overhead, sequential/parallel publishing, one/three behavior pipelines, serialization, and enqueue cost. Dispatch, generated dispatch, pipeline, diagnostics, and messaging benchmarks emit allocation measurements; selected dispatch benchmarks also emit disassembly reports through BenchmarkDotNet. Always run benchmarks in Release mode without a debugger.
 
 ## Testing
 
@@ -594,14 +606,17 @@ Create a `ServiceCollection`, call `AddSignalynx`, and resolve `ISignalynx`. Tes
 - Async-only API with cancellation propagation
 - Sequential publishing as the predictable low-overhead default
 - Optional source-generated registration
+- Cached direct dispatch delegates and no-behavior pipeline fast paths
 - BenchmarkDotNet with allocation and GC measurements
 
-`EnableDelegateCaching` reserves a stable configuration point for upcoming optimized dispatch caches. `EnableDiagnostics` turns on core dispatch and publish activities and metrics.
+`EnableDelegateCaching` is enabled by default for optimized dispatch caches.
+`EnableDiagnostics` turns on core dispatch and publish activities and metrics.
 
 ## Roadmap
 
-- Generated direct-dispatch and pipeline delegates
-- NativeAOT/trimming annotations and test matrix
+- Real NativeAOT sample app with publish/run validation in CI
+- Transport and durable store integration tests with Docker-backed brokers/databases
+- High-throughput end-to-end messaging benchmark covering transport, outbox, inbox, and handler execution
 - .NET 10 target after the support baseline is adopted
 - Signed packages, Source Link, API compatibility checks, and release automation
 

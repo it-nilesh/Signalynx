@@ -3,6 +3,7 @@
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Description>Contracts for the Signalynx high-performance mediator and messaging abstraction.</Description>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />

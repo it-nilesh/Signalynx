@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <Description>Default high-performance in-process implementation for Signalynx.</Description>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Signalynx.Abstractions/Signalynx.Abstractions.csproj" />

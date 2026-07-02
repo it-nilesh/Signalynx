@@ -25,4 +25,26 @@ public sealed class PipelineExecutor
                 : behaviors[index].HandleAsync(request, () => InvokeAsync(index + 1), cancellationToken);
     }
 
+    public ValueTask<TResult> ExecuteAsync<TRequest, TResult, TState>(
+        TRequest request,
+        IReadOnlyList<IPipelineBehavior<TRequest, TResult>> behaviors,
+        TState state,
+        Func<TState, ValueTask<TResult>> handler,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(behaviors);
+        ArgumentNullException.ThrowIfNull(handler);
+
+        if (behaviors.Count == 0)
+        {
+            return handler(state);
+        }
+
+        return ExecuteAsync(
+            request,
+            behaviors,
+            () => handler(state),
+            cancellationToken);
+    }
 }

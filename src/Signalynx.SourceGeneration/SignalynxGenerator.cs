@@ -12,17 +12,6 @@ namespace Signalynx.SourceGeneration;
 [Generator(LanguageNames.CSharp)]
 public sealed class SignalynxGenerator : IIncrementalGenerator
 {
-    private static readonly ImmutableHashSet<string> HandlerInterfaces =
-        ImmutableHashSet.Create(
-            StringComparer.Ordinal,
-            "Signalynx.ICommandHandler<TCommand>",
-            "Signalynx.ICommandHandler<TCommand, TResult>",
-            "Signalynx.IQueryHandler<TQuery, TResult>",
-            "Signalynx.IRequestHandler<TRequest, TResult>",
-            "Signalynx.INotificationHandler<TNotification>",
-            "Signalynx.IEventHandler<TEvent>",
-            "Signalynx.IPipelineBehavior<TRequest, TResult>");
-
     private static readonly DiagnosticDescriptor DuplicateHandler = new(
         "SLX001",
         "Duplicate Signalynx handler",
@@ -56,12 +45,12 @@ public sealed class SignalynxGenerator : IIncrementalGenerator
         var registrations = ImmutableArray.CreateBuilder<Registration>();
         foreach (var contract in type.AllInterfaces)
         {
-            var definition = contract.OriginalDefinition.ToDisplayString();
-            if (HandlerInterfaces.Contains(definition))
+            var definition = contract.OriginalDefinition;
+            if (IsHandlerInterface(definition))
             {
                 registrations.Add(new Registration(
                     contract.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                    IsMultiHandler(contract.OriginalDefinition.ToDisplayString())));
+                    IsMultiHandler(definition)));
             }
         }
 
@@ -112,6 +101,17 @@ public sealed class SignalynxGenerator : IIncrementalGenerator
         source.AppendLine("{");
         source.AppendLine("    public static class SignalynxGeneratedServiceCollectionExtensions");
         source.AppendLine("    {");
+        source.AppendLine("        public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection AddSignalynxGenerated(");
+        source.AppendLine("            this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services,");
+        source.AppendLine("            global::System.Action<global::Signalynx.SignalynxOptions>? configure = null)");
+        source.AppendLine("        {");
+        source.AppendLine("            global::System.ArgumentNullException.ThrowIfNull(services);");
+        source.AppendLine("            return global::Signalynx.ServiceCollectionExtensions.AddSignalynx(");
+        source.AppendLine("                services,");
+        source.AppendLine("                SignalynxGeneratedHandlerMap.Descriptors,");
+        source.AppendLine("                configure);");
+        source.AppendLine("        }");
+        source.AppendLine();
         source.AppendLine("        public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection AddSignalynxGeneratedHandlers(");
         source.AppendLine("            this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)");
         source.AppendLine("        {");
@@ -135,6 +135,25 @@ public sealed class SignalynxGenerator : IIncrementalGenerator
         source.AppendLine();
         source.AppendLine("    internal static class SignalynxGeneratedHandlerMap");
         source.AppendLine("    {");
+        source.AppendLine("        internal static readonly global::Signalynx.HandlerDescriptor[] Descriptors =");
+        source.AppendLine("        {");
+
+        foreach (var handler in handlers)
+        {
+            foreach (var registration in handler.Registrations)
+            {
+                source.Append("            new global::Signalynx.HandlerDescriptor(typeof(");
+                source.Append(registration.ServiceType);
+                source.Append("), typeof(");
+                source.Append(handler.ImplementationType);
+                source.Append("), ");
+                source.Append(registration.AllowsMultiple ? "true" : "false");
+                source.AppendLine("),");
+            }
+        }
+
+        source.AppendLine("        };");
+        source.AppendLine();
         source.AppendLine("        internal static readonly global::System.Collections.Generic.IReadOnlyDictionary<global::System.Type, global::System.Type[]> Handlers =");
         source.AppendLine("            new global::System.Collections.Generic.Dictionary<global::System.Type, global::System.Type[]>");
         source.AppendLine("            {");
@@ -157,10 +176,24 @@ public sealed class SignalynxGenerator : IIncrementalGenerator
         context.AddSource("Signalynx.Generated.g.cs", SourceText.From(source.ToString(), Encoding.UTF8));
     }
 
-    private static bool IsMultiHandler(string definition) =>
-        definition.StartsWith("Signalynx.INotificationHandler", StringComparison.Ordinal) ||
-        definition.StartsWith("Signalynx.IEventHandler", StringComparison.Ordinal) ||
-        definition.Contains("PipelineBehavior");
+    private static bool IsHandlerInterface(INamedTypeSymbol definition) =>
+        definition.ContainingNamespace.ToDisplayString() == "Signalynx" &&
+        definition is
+        {
+            Name: "ICommandHandler",
+            Arity: 1 or 2
+        } or
+        {
+            Name: "IQueryHandler" or "IRequestHandler" or "IPipelineBehavior",
+            Arity: 2
+        } or
+        {
+            Name: "INotificationHandler" or "IEventHandler",
+            Arity: 1
+        };
+
+    private static bool IsMultiHandler(INamedTypeSymbol definition) =>
+        definition.Name is "INotificationHandler" or "IEventHandler" or "IPipelineBehavior";
 
     private sealed class HandlerCandidate
     {

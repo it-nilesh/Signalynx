@@ -1,8 +1,14 @@
 using System.Collections.Frozen;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Signalynx;
 
-public sealed record HandlerDescriptor(Type ServiceType, Type ImplementationType, bool AllowsMultiple);
+public sealed record HandlerDescriptor(
+    Type ServiceType,
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+    [property: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+    Type ImplementationType,
+    bool AllowsMultiple);
 
 public sealed class HandlerRegistry
 {

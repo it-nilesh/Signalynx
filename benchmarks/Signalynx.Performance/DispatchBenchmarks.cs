@@ -138,6 +138,130 @@ public class PipelineBenchmarks
     exportGithubMarkdown: true,
     exportHtml: true,
     exportCombinedDisassemblyReport: true)]
+public class GeneratedDispatchBenchmarks
+{
+    private ISignalynx _cached = null!;
+    private ISignalynx _uncached = null!;
+    private ISignalynx _descriptorRegistered = null!;
+    private BenchmarkHandler _handler = null!;
+    private BenchmarkCommand _command = null!;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _cached = BuildWithScanning(enableDelegateCaching: true);
+        _uncached = BuildWithScanning(enableDelegateCaching: false);
+        _descriptorRegistered = BuildWithDescriptors();
+        _handler = new BenchmarkHandler();
+        _command = new BenchmarkCommand(42);
+    }
+
+    [Benchmark(Baseline = true)]
+    public ValueTask<int> DirectCall() =>
+        _handler.HandleAsync(_command);
+
+    [Benchmark]
+    public ValueTask<int> CachedDelegateDispatch() =>
+        _cached.DispatchAsync<BenchmarkCommand, int>(_command);
+
+    [Benchmark]
+    public ValueTask<int> UncachedDispatch() =>
+        _uncached.DispatchAsync<BenchmarkCommand, int>(_command);
+
+    [Benchmark]
+    public ValueTask<int> DescriptorRegisteredDispatch() =>
+        _descriptorRegistered.DispatchAsync<BenchmarkCommand, int>(_command);
+
+    private static ISignalynx BuildWithScanning(bool enableDelegateCaching)
+    {
+        var services = new ServiceCollection();
+        services.AddSignalynx(options =>
+        {
+            options.RegisterServicesFromAssembly(typeof(GeneratedDispatchBenchmarks).Assembly);
+            options.EnableDelegateCaching = enableDelegateCaching;
+        });
+        return services.BuildServiceProvider().GetRequiredService<ISignalynx>();
+    }
+
+    private static ISignalynx BuildWithDescriptors()
+    {
+        var services = new ServiceCollection();
+        services.AddSignalynx(
+            [
+                new HandlerDescriptor(
+                    typeof(ICommandHandler<BenchmarkCommand, int>),
+                    typeof(BenchmarkHandler),
+                    AllowsMultiple: false)
+            ]);
+        return services.BuildServiceProvider().GetRequiredService<ISignalynx>();
+    }
+}
+
+[MemoryDiagnoser]
+[SimpleJob]
+public class GeneratedDispatchLoadBenchmarks
+{
+    private const int Operations = 1_000_000;
+
+    private ISignalynx _descriptorRegistered = null!;
+    private BenchmarkCommand _command = null!;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _descriptorRegistered = BuildWithDescriptors();
+        _command = new BenchmarkCommand(1);
+    }
+
+    [Benchmark(Baseline = true, OperationsPerInvoke = Operations)]
+    public async ValueTask<int> SequentialGeneratedDispatch_OneMillion()
+    {
+        var total = 0;
+        for (var i = 0; i < Operations; i++)
+        {
+            total += await _descriptorRegistered.DispatchAsync<BenchmarkCommand, int>(_command);
+        }
+
+        return total;
+    }
+
+    [Benchmark(OperationsPerInvoke = Operations)]
+    public async ValueTask<long> ParallelGeneratedDispatch_OneMillion()
+    {
+        long total = 0;
+        await Parallel.ForAsync(
+            0,
+            Operations,
+            async (_, _) =>
+            {
+                var result = await _descriptorRegistered.DispatchAsync<BenchmarkCommand, int>(_command);
+                Interlocked.Add(ref total, result);
+            });
+
+        return total;
+    }
+
+    private static ISignalynx BuildWithDescriptors()
+    {
+        var services = new ServiceCollection();
+        services.AddSignalynx(
+            [
+                new HandlerDescriptor(
+                    typeof(ICommandHandler<BenchmarkCommand, int>),
+                    typeof(BenchmarkHandler),
+                    AllowsMultiple: false)
+            ]);
+        return services.BuildServiceProvider().GetRequiredService<ISignalynx>();
+    }
+}
+
+[MemoryDiagnoser]
+[DisassemblyDiagnoser(
+    maxDepth: 3,
+    printSource: true,
+    exportGithubMarkdown: true,
+    exportHtml: true,
+    exportCombinedDisassemblyReport: true)]
 public class DiagnosticsOverheadBenchmarks
 {
     private ISignalynx _diagnosticsDisabled = null!;
