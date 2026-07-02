@@ -22,6 +22,8 @@ The performance goal is low dispatch overhead—not a claim that real business l
 | `Signalynx.SourceGeneration` | Optional compile-time handler registration |
 | `Signalynx.Messaging` | Durable messaging contracts, workers, retries, inbox/outbox, and operations |
 | `Signalynx.Transports.InMemory` | Development/test transport and non-persistent stores |
+| `Signalynx.Stores.SqlServer` | SQL Server durable inbox, outbox, and dead-letter stores |
+| `Signalynx.Stores.PostgreSql` | PostgreSQL durable inbox, outbox, and dead-letter stores |
 | `Signalynx.Transports.RabbitMQ` | RabbitMQ transport adapter |
 | `Signalynx.Transports.AzureServiceBus` | Azure Service Bus transport adapter |
 | `Signalynx.Transports.AmazonSqs` | Amazon SQS transport adapter |
@@ -36,6 +38,8 @@ dotnet add package Signalynx.DependencyInjection
 dotnet add package Signalynx.Logging
 dotnet add package Signalynx.Validation
 dotnet add package Signalynx.Messaging
+dotnet add package Signalynx.Stores.SqlServer
+dotnet add package Signalynx.Stores.PostgreSql
 dotnet add package Signalynx.Transports.RabbitMQ
 dotnet add package Signalynx.Transports.AzureServiceBus
 dotnet add package Signalynx.Transports.AmazonSqs
@@ -208,6 +212,39 @@ outbox insert to participate in the same database transaction. The interfaces
 support that architecture, but transaction enlistment belongs in each database
 provider.
 
+Signalynx ships durable store adapters for SQL Server and PostgreSQL. Each
+store implements `IOutboxStore`, `IInboxStore`, and `IDeadLetterStore` over a
+database-specific client abstraction so applications can bind raw ADO.NET,
+Dapper, EF Core, or a transaction-enlisted implementation.
+
+Example SQL Server registration:
+
+```csharp
+builder.Services.AddSingleton<ISqlServerMessageStoreClient, SqlServerStoreClient>();
+builder.Services.AddSignalynxSqlServerStores(options =>
+{
+    options.Schema = "messaging";
+    options.OutboxTable = "outbox";
+    options.InboxTable = "inbox";
+    options.DeadLetterTable = "dead_letters";
+});
+```
+
+PostgreSQL uses the same shape through `IPostgreSqlMessageStoreClient` and
+`AddSignalynxPostgreSqlStores`.
+
+For high-throughput workloads, the SQL Server and PostgreSQL stores also
+implement optional batch interfaces:
+
+- `IBatchOutboxStore`
+- `IBatchInboxStore`
+- `IBatchDeadLetterStore`
+
+Provider clients should implement these batch methods with bulk insert/update
+commands, table-valued parameters, `COPY`, array parameters, partition-aware
+queries, or equivalent database-specific primitives. Avoid one database
+round-trip per message when processing large streams.
+
 Signalynx ships transport adapter packages for RabbitMQ, Azure Service Bus,
 Amazon SQS, and Kafka. Each adapter implements `IMessageTransport` over a
 small broker-specific client abstraction, so applications can bind the official
@@ -226,9 +263,6 @@ builder.Services.AddSignalynxRabbitMqTransport(options =>
 
 The same pattern is available through `IAzureServiceBusTransportClient`,
 `IAmazonSqsTransportClient`, and `IKafkaTransportClient`.
-
-Signalynx does not yet ship SQL Server, PostgreSQL, or other durable
-inbox/outbox provider implementations.
 
 ## Production Configuration
 
@@ -280,9 +314,8 @@ Production deployments must register real providers:
 
 ```csharp
 builder.Services.AddSingleton<IMessageTransport, ProductionTransport>();
-builder.Services.AddSingleton<IOutboxStore, SqlOutboxStore>();
-builder.Services.AddSingleton<IInboxStore, SqlInboxStore>();
-builder.Services.AddSingleton<IDeadLetterStore, SqlDeadLetterStore>();
+builder.Services.AddSingleton<ISqlServerMessageStoreClient, SqlServerStoreClient>();
+builder.Services.AddSignalynxSqlServerStores();
 ```
 
 These implementations are application- or vendor-specific. Do not register
@@ -425,6 +458,26 @@ process restart behavior.
 
 ## Production Observability
 
+Enable core mediator diagnostics when you want dispatch and publish telemetry:
+
+```csharp
+builder.Services.AddSignalynx(options =>
+{
+    options.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    options.EnableDiagnostics = true;
+});
+```
+
+Signalynx emits dispatch and publish activities through the `Signalynx`
+activity source and metrics through the `Signalynx` meter:
+
+- `signalynx.dispatch.calls`
+- `signalynx.dispatch.failures`
+- `signalynx.dispatch.duration`
+- `signalynx.publish.calls`
+- `signalynx.publish.failures`
+- `signalynx.publish.duration`
+
 Signalynx emits these metrics through the `Signalynx.Messaging` meter:
 
 - `signalynx.messaging.enqueued`
@@ -438,8 +491,13 @@ OpenTelemetry example:
 
 ```csharp
 builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing =>
+    {
+        tracing.AddSource(SignalynxDiagnostics.ActivitySourceName);
+    })
     .WithMetrics(metrics =>
     {
+        metrics.AddMeter(SignalynxDiagnostics.MeterName);
         metrics.AddMeter(SignalynxMessagingDiagnostics.MeterName);
         metrics.AddPrometheusExporter();
     });
@@ -521,7 +579,7 @@ dotnet run --project samples/Signalynx.Samples.Api
 dotnet pack src/Signalynx.Core -c Release
 ```
 
-BenchmarkDotNet scenarios include direct calls, cached delegates, reflection fallback, `ValueTask` dispatch, commands, queries, requests, notifications, events, and one/three behavior pipelines. Always run benchmarks in Release mode without a debugger.
+BenchmarkDotNet scenarios include direct calls, cached delegates, reflection fallback, `ValueTask` dispatch, commands, queries, requests, notifications, events, diagnostics overhead, sequential/parallel publishing, one/three behavior pipelines, serialization, and enqueue cost. Dispatch, pipeline, diagnostics, and messaging benchmarks emit disassembly reports through BenchmarkDotNet. Always run benchmarks in Release mode without a debugger.
 
 ## Testing
 
@@ -538,15 +596,12 @@ Create a `ServiceCollection`, call `AddSignalynx`, and resolve `ISignalynx`. Tes
 - Optional source-generated registration
 - BenchmarkDotNet with allocation and GC measurements
 
-Options such as `EnableDelegateCaching` and `EnableDiagnostics` reserve stable configuration points for upcoming optimized dispatch caches and diagnostics. They do not currently alter the typed dispatch path.
+`EnableDelegateCaching` reserves a stable configuration point for upcoming optimized dispatch caches. `EnableDiagnostics` turns on core dispatch and publish activities and metrics.
 
 ## Roadmap
 
 - Generated direct-dispatch and pipeline delegates
 - NativeAOT/trimming annotations and test matrix
-- Expanded benchmark comparisons and disassembly reports
-- Diagnostic events and OpenTelemetry integration
-- SQL Server and PostgreSQL durable inbox/outbox providers
 - .NET 10 target after the support baseline is adopted
 - Signed packages, Source Link, API compatibility checks, and release automation
 

@@ -63,6 +63,25 @@ public interface IOutboxStore
         CancellationToken cancellationToken);
 }
 
+public interface IBatchOutboxStore
+{
+    ValueTask EnqueueBatchAsync(
+        IReadOnlyList<OutboxMessage> messages,
+        CancellationToken cancellationToken);
+
+    ValueTask MarkDeliveredBatchAsync(
+        IReadOnlyList<Guid> messageIds,
+        CancellationToken cancellationToken);
+
+    ValueTask RescheduleBatchAsync(
+        IReadOnlyList<OutboxReschedule> messages,
+        CancellationToken cancellationToken);
+
+    ValueTask MoveToDeadLetterBatchAsync(
+        IReadOnlyList<OutboxDeadLetter> messages,
+        CancellationToken cancellationToken);
+}
+
 public interface IInboxStore
 {
     ValueTask<bool> TryStartAsync(
@@ -75,6 +94,21 @@ public interface IInboxStore
     ValueTask FailAsync(Guid messageId, string error, CancellationToken cancellationToken);
 }
 
+public interface IBatchInboxStore
+{
+    ValueTask<IReadOnlyList<Guid>> TryStartBatchAsync(
+        IReadOnlyList<InboxStart> messages,
+        CancellationToken cancellationToken);
+
+    ValueTask CompleteBatchAsync(
+        IReadOnlyList<Guid> messageIds,
+        CancellationToken cancellationToken);
+
+    ValueTask FailBatchAsync(
+        IReadOnlyList<InboxFailure> messages,
+        CancellationToken cancellationToken);
+}
+
 public interface IDeadLetterStore
 {
     ValueTask AddAsync(DeadLetterMessage message, CancellationToken cancellationToken);
@@ -84,6 +118,17 @@ public interface IDeadLetterStore
         CancellationToken cancellationToken);
 
     ValueTask RemoveAsync(Guid messageId, CancellationToken cancellationToken);
+}
+
+public interface IBatchDeadLetterStore
+{
+    ValueTask AddBatchAsync(
+        IReadOnlyList<DeadLetterMessage> messages,
+        CancellationToken cancellationToken);
+
+    ValueTask RemoveBatchAsync(
+        IReadOnlyList<Guid> messageIds,
+        CancellationToken cancellationToken);
 }
 
 public interface IRetryPolicy

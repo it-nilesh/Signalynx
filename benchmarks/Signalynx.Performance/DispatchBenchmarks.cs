@@ -1,10 +1,17 @@
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Diagnosers;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
 namespace Signalynx.Performance;
 
 [MemoryDiagnoser]
+[DisassemblyDiagnoser(
+    maxDepth: 3,
+    printSource: true,
+    exportGithubMarkdown: true,
+    exportHtml: true,
+    exportCombinedDisassemblyReport: true)]
 [SimpleJob]
 public class DispatchBenchmarks
 {
@@ -81,6 +88,12 @@ public class DispatchBenchmarks
 }
 
 [MemoryDiagnoser]
+[DisassemblyDiagnoser(
+    maxDepth: 3,
+    printSource: true,
+    exportGithubMarkdown: true,
+    exportHtml: true,
+    exportCombinedDisassemblyReport: true)]
 public class PipelineBenchmarks
 {
     private ISignalynx _oneBehavior = null!;
@@ -113,6 +126,93 @@ public class PipelineBenchmarks
             {
                 options.AddOpenBehavior(typeof(PassThroughBehavior<,>));
             }
+        });
+        return services.BuildServiceProvider().GetRequiredService<ISignalynx>();
+    }
+}
+
+[MemoryDiagnoser]
+[DisassemblyDiagnoser(
+    maxDepth: 3,
+    printSource: true,
+    exportGithubMarkdown: true,
+    exportHtml: true,
+    exportCombinedDisassemblyReport: true)]
+public class DiagnosticsOverheadBenchmarks
+{
+    private ISignalynx _diagnosticsDisabled = null!;
+    private ISignalynx _diagnosticsEnabled = null!;
+    private BenchmarkCommand _command = null!;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _diagnosticsDisabled = Build(enableDiagnostics: false);
+        _diagnosticsEnabled = Build(enableDiagnostics: true);
+        _command = new BenchmarkCommand(42);
+    }
+
+    [Benchmark(Baseline = true)]
+    public ValueTask<int> DispatchDiagnosticsDisabled() =>
+        _diagnosticsDisabled.DispatchAsync<BenchmarkCommand, int>(_command);
+
+    [Benchmark]
+    public ValueTask<int> DispatchDiagnosticsEnabled() =>
+        _diagnosticsEnabled.DispatchAsync<BenchmarkCommand, int>(_command);
+
+    private static ISignalynx Build(bool enableDiagnostics)
+    {
+        var services = new ServiceCollection();
+        services.AddSignalynx(options =>
+        {
+            options.RegisterServicesFromAssembly(typeof(DiagnosticsOverheadBenchmarks).Assembly);
+            options.EnableDiagnostics = enableDiagnostics;
+        });
+        return services.BuildServiceProvider().GetRequiredService<ISignalynx>();
+    }
+}
+
+[MemoryDiagnoser]
+public class PublisherStrategyBenchmarks
+{
+    private ISignalynx _sequential = null!;
+    private ISignalynx _parallel = null!;
+    private BenchmarkManyNotification _notification = null!;
+    private BenchmarkManyEvent _event = null!;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _sequential = Build(SignalynxPublishStrategy.Sequential);
+        _parallel = Build(SignalynxPublishStrategy.Parallel);
+        _notification = new BenchmarkManyNotification();
+        _event = new BenchmarkManyEvent();
+    }
+
+    [Benchmark(Baseline = true)]
+    public ValueTask SequentialNotificationMultipleHandlers() =>
+        _sequential.PublishAsync(_notification);
+
+    [Benchmark]
+    public ValueTask ParallelNotificationMultipleHandlers() =>
+        _parallel.PublishAsync(_notification);
+
+    [Benchmark]
+    public ValueTask SequentialEventMultipleHandlers() =>
+        _sequential.PublishEventAsync(_event);
+
+    [Benchmark]
+    public ValueTask ParallelEventMultipleHandlers() =>
+        _parallel.PublishEventAsync(_event);
+
+    private static ISignalynx Build(SignalynxPublishStrategy strategy)
+    {
+        var services = new ServiceCollection();
+        services.AddSignalynx(options =>
+        {
+            options.RegisterServicesFromAssembly(typeof(PublisherStrategyBenchmarks).Assembly);
+            options.NotificationPublishStrategy = strategy;
+            options.EventPublishStrategy = strategy;
         });
         return services.BuildServiceProvider().GetRequiredService<ISignalynx>();
     }
