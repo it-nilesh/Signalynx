@@ -24,6 +24,10 @@ The performance goal is low dispatch overhead—not a claim that real business l
 | `Signalynx.Transports.InMemory` | Development/test transport and non-persistent stores |
 | `Signalynx.Stores.SqlServer` | SQL Server durable inbox, outbox, and dead-letter stores |
 | `Signalynx.Stores.PostgreSql` | PostgreSQL durable inbox, outbox, and dead-letter stores |
+| `Signalynx.Transports.RabbitMQ` | RabbitMQ transport adapter |
+| `Signalynx.Transports.AzureServiceBus` | Azure Service Bus transport adapter |
+| `Signalynx.Transports.AmazonSqs` | Amazon SQS transport adapter |
+| `Signalynx.Transports.Kafka` | Kafka transport adapter |
 
 ## Installation
 
@@ -36,6 +40,10 @@ dotnet add package Signalynx.Validation
 dotnet add package Signalynx.Messaging
 dotnet add package Signalynx.Stores.SqlServer
 dotnet add package Signalynx.Stores.PostgreSql
+dotnet add package Signalynx.Transports.RabbitMQ
+dotnet add package Signalynx.Transports.AzureServiceBus
+dotnet add package Signalynx.Transports.AmazonSqs
+dotnet add package Signalynx.Transports.Kafka
 ```
 
 For local development, reference the projects in `src/`.
@@ -237,8 +245,24 @@ commands, table-valued parameters, `COPY`, array parameters, partition-aware
 queries, or equivalent database-specific primitives. Avoid one database
 round-trip per message when processing large streams.
 
-Signalynx does not yet ship RabbitMQ, Kafka, Azure Service Bus, Amazon SQS,
-or other provider-specific transport adapters.
+Signalynx ships transport adapter packages for RabbitMQ, Azure Service Bus,
+Amazon SQS, and Kafka. Each adapter implements `IMessageTransport` over a
+small broker-specific client abstraction, so applications can bind the official
+broker SDK client, a managed wrapper, or a test double without coupling
+Signalynx.Messaging to vendor packages.
+
+Example RabbitMQ registration:
+
+```csharp
+builder.Services.AddSingleton<IRabbitMqTransportClient, YourRabbitMqTransportClient>();
+builder.Services.AddSignalynxRabbitMqTransport(options =>
+{
+    options.QueueName = "orders";
+});
+```
+
+The same pattern is available through `IAzureServiceBusTransportClient`,
+`IAmazonSqsTransportClient`, and `IKafkaTransportClient`.
 
 ## Production Configuration
 
@@ -578,7 +602,6 @@ Create a `ServiceCollection`, call `AddSignalynx`, and resolve `ISignalynx`. Tes
 
 - Generated direct-dispatch and pipeline delegates
 - NativeAOT/trimming annotations and test matrix
-- RabbitMQ, Azure Service Bus, Amazon SQS, and Kafka transport adapters
 - .NET 10 target after the support baseline is adopted
 - Signed packages, Source Link, API compatibility checks, and release automation
 

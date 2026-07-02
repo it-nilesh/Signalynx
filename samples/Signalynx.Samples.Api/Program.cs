@@ -1,6 +1,5 @@
 using Signalynx;
 using Signalynx.Messaging;
-using Signalynx.Messaging.InMemory;
 using Signalynx.Samples.Api;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,7 +13,7 @@ builder.Services.AddSignalynx(options =>
     options.ValidateHandlersOnStartup = true;
     options.EnableDelegateCaching = true;
 });
-builder.Services.AddSignalynxInMemoryTransport();
+builder.Services.AddSampleMessagingTransport(builder.Configuration);
 builder.Services.AddSignalynxMessaging(options =>
 {
     options.RegisterMessage<OrderSubmitted>();

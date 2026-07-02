@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Description>Amazon SQS transport adapter for Signalynx messaging.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Signalynx.Messaging/Signalynx.Messaging.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>
