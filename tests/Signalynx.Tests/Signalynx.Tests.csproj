@@ -23,6 +23,8 @@
     <ProjectReference Include="../../src/Signalynx.Logging/Signalynx.Logging.csproj" />
     <ProjectReference Include="../../src/Signalynx.Validation/Signalynx.Validation.csproj" />
     <ProjectReference Include="../../src/Signalynx.Messaging/Signalynx.Messaging.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Stores.PostgreSql/Signalynx.Stores.PostgreSql.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Stores.SqlServer/Signalynx.Stores.SqlServer.csproj" />
     <ProjectReference Include="../../src/Signalynx.Transports.InMemory/Signalynx.Transports.InMemory.csproj" />
   </ItemGroup>
 </Project>

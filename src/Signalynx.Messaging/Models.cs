@@ -26,6 +26,25 @@ public sealed record DeadLetterMessage(
     DateTimeOffset FailedAt,
     string Source);
 
+public sealed record OutboxReschedule(
+    Guid MessageId,
+    int Attempt,
+    DateTimeOffset NextAttempt,
+    string Error);
+
+public sealed record OutboxDeadLetter(
+    Guid MessageId,
+    int Attempt,
+    string Error);
+
+public sealed record InboxStart(
+    Guid MessageId,
+    DateTimeOffset ReceivedAt);
+
+public sealed record InboxFailure(
+    Guid MessageId,
+    string Error);
+
 public sealed record MessageContext(
     MessageEnvelope Envelope,
     int Attempt,
