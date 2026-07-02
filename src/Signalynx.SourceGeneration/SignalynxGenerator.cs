@@ -12,17 +12,6 @@ namespace Signalynx.SourceGeneration;
 [Generator(LanguageNames.CSharp)]
 public sealed class SignalynxGenerator : IIncrementalGenerator
 {
-    private static readonly ImmutableHashSet<string> HandlerInterfaces =
-        ImmutableHashSet.Create(
-            StringComparer.Ordinal,
-            "Signalynx.ICommandHandler<TCommand>",
-            "Signalynx.ICommandHandler<TCommand, TResult>",
-            "Signalynx.IQueryHandler<TQuery, TResult>",
-            "Signalynx.IRequestHandler<TRequest, TResult>",
-            "Signalynx.INotificationHandler<TNotification>",
-            "Signalynx.IEventHandler<TEvent>",
-            "Signalynx.IPipelineBehavior<TRequest, TResult>");
-
     private static readonly DiagnosticDescriptor DuplicateHandler = new(
         "SLX001",
         "Duplicate Signalynx handler",
@@ -56,12 +45,12 @@ public sealed class SignalynxGenerator : IIncrementalGenerator
         var registrations = ImmutableArray.CreateBuilder<Registration>();
         foreach (var contract in type.AllInterfaces)
         {
-            var definition = contract.OriginalDefinition.ToDisplayString();
-            if (HandlerInterfaces.Contains(definition))
+            var definition = contract.OriginalDefinition;
+            if (IsHandlerInterface(definition))
             {
                 registrations.Add(new Registration(
                     contract.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                    IsMultiHandler(contract.OriginalDefinition.ToDisplayString())));
+                    IsMultiHandler(definition)));
             }
         }
 
@@ -187,10 +176,24 @@ public sealed class SignalynxGenerator : IIncrementalGenerator
         context.AddSource("Signalynx.Generated.g.cs", SourceText.From(source.ToString(), Encoding.UTF8));
     }
 
-    private static bool IsMultiHandler(string definition) =>
-        definition.StartsWith("Signalynx.INotificationHandler", StringComparison.Ordinal) ||
-        definition.StartsWith("Signalynx.IEventHandler", StringComparison.Ordinal) ||
-        definition.Contains("PipelineBehavior");
+    private static bool IsHandlerInterface(INamedTypeSymbol definition) =>
+        definition.ContainingNamespace.ToDisplayString() == "Signalynx" &&
+        definition is
+        {
+            Name: "ICommandHandler",
+            Arity: 1 or 2
+        } or
+        {
+            Name: "IQueryHandler" or "IRequestHandler" or "IPipelineBehavior",
+            Arity: 2
+        } or
+        {
+            Name: "INotificationHandler" or "IEventHandler",
+            Arity: 1
+        };
+
+    private static bool IsMultiHandler(INamedTypeSymbol definition) =>
+        definition.Name is "INotificationHandler" or "IEventHandler" or "IPipelineBehavior";
 
     private sealed class HandlerCandidate
     {

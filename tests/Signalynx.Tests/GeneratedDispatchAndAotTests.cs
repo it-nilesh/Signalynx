@@ -1,6 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.DependencyInjection;
+using Signalynx.SourceGeneration;
 
 namespace Signalynx.Tests;
 
@@ -125,6 +128,72 @@ public sealed class GeneratedDispatchAndAotTests
         Assert.NotNull(registerAssembly);
         Assert.NotNull(addSignalynx.GetCustomAttribute<RequiresUnreferencedCodeAttribute>());
         Assert.NotNull(registerAssembly.GetCustomAttribute<RequiresUnreferencedCodeAttribute>());
+    }
+
+    [Fact]
+    public void Source_generator_emits_aot_safe_registration_extension_and_descriptors()
+    {
+        var source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Signalynx;
+
+            namespace GeneratedCase
+            {
+                public sealed class GeneratedCaseCommand : ICommand<int>
+                {
+                    public GeneratedCaseCommand(int value) => Value = value;
+
+                    public int Value { get; }
+                }
+
+                public sealed class GeneratedCaseHandler : ICommandHandler<GeneratedCaseCommand, int>
+                {
+                    public ValueTask<int> HandleAsync(
+                        GeneratedCaseCommand command,
+                        CancellationToken cancellationToken = default) =>
+                        ValueTask.FromResult(command.Value);
+                }
+            }
+            """;
+
+        var compilation = CSharpCompilation.Create(
+            "GeneratedCase",
+            [CSharpSyntaxTree.ParseText(source)],
+            GetGeneratorTestReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create([new SignalynxGenerator()]);
+        driver = driver.RunGeneratorsAndUpdateCompilation(
+            compilation,
+            out _,
+            out var diagnostics);
+
+        var runResult = driver.GetRunResult();
+        var generated = runResult
+            .GeneratedTrees
+            .Single(tree => tree.ToString().Contains("AddSignalynxGenerated(", StringComparison.Ordinal))
+            .ToString();
+
+        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        Assert.Contains("AddSignalynxGenerated(", generated);
+        Assert.Contains("new global::Signalynx.HandlerDescriptor", generated);
+        Assert.Contains("typeof(global::Signalynx.ICommandHandler<global::GeneratedCase.GeneratedCaseCommand, int>)", generated);
+        Assert.Contains("typeof(global::GeneratedCase.GeneratedCaseHandler)", generated);
+    }
+
+    private static IReadOnlyList<MetadataReference> GetGeneratorTestReferences()
+    {
+        var trustedPlatformAssemblies =
+            (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ?? string.Empty;
+        var paths = trustedPlatformAssemblies
+            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .Append(typeof(ICommand<>).Assembly.Location)
+            .Distinct(StringComparer.Ordinal);
+
+        return paths
+            .Select(static path => MetadataReference.CreateFromFile(path))
+            .ToArray();
     }
 }
 
