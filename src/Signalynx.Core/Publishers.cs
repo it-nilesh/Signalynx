@@ -17,9 +17,12 @@ public sealed class NotificationPublisher
         where TNotification : INotification
     {
         var handlers = GetServices<INotificationHandler<TNotification>>();
-        return _options.NotificationPublishStrategy == SignalynxPublishStrategy.Sequential
+        var operation = _options.NotificationPublishStrategy == SignalynxPublishStrategy.Sequential
             ? PublishSequentialAsync(handlers, notification, cancellationToken)
             : PublishParallelAsync(handlers, notification, cancellationToken);
+        return _options.EnableDiagnostics
+            ? TrackAsync(operation, "notification", typeof(TNotification), handlers.Count)
+            : operation;
     }
 
     private IReadOnlyList<T> GetServices<T>() =>
@@ -66,6 +69,41 @@ public sealed class NotificationPublisher
             throw new AggregateException(all.Exception.InnerExceptions);
         }
     }
+
+    private async ValueTask TrackAsync(
+        ValueTask operation,
+        string operationName,
+        Type messageType,
+        int handlerCount)
+    {
+        var activity = SignalynxDiagnostics.StartActivity(
+            _options.EnableDiagnostics,
+            operationName,
+            messageType);
+        activity?.SetTag("signalynx.handler.count", handlerCount);
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        Exception? exception = null;
+
+        try
+        {
+            await operation.ConfigureAwait(false);
+        }
+        catch (Exception caught)
+        {
+            exception = caught;
+            throw;
+        }
+        finally
+        {
+            SignalynxDiagnostics.RecordPublish(
+                operationName,
+                messageType,
+                handlerCount,
+                started,
+                exception);
+            SignalynxDiagnostics.CompleteActivity(activity, exception);
+        }
+    }
 }
 
 public sealed class EventPublisher
@@ -83,9 +121,12 @@ public sealed class EventPublisher
         where TEvent : IEvent
     {
         var handlers = GetServices<IEventHandler<TEvent>>();
-        return _options.EventPublishStrategy == SignalynxPublishStrategy.Sequential
+        var operation = _options.EventPublishStrategy == SignalynxPublishStrategy.Sequential
             ? PublishSequentialAsync(handlers, domainEvent, cancellationToken)
             : PublishParallelAsync(handlers, domainEvent, cancellationToken);
+        return _options.EnableDiagnostics
+            ? TrackAsync(operation, "event", typeof(TEvent), handlers.Count)
+            : operation;
     }
 
     private IReadOnlyList<T> GetServices<T>() =>
@@ -130,6 +171,41 @@ public sealed class EventPublisher
         catch when (all.Exception is not null)
         {
             throw new AggregateException(all.Exception.InnerExceptions);
+        }
+    }
+
+    private async ValueTask TrackAsync(
+        ValueTask operation,
+        string operationName,
+        Type messageType,
+        int handlerCount)
+    {
+        var activity = SignalynxDiagnostics.StartActivity(
+            _options.EnableDiagnostics,
+            operationName,
+            messageType);
+        activity?.SetTag("signalynx.handler.count", handlerCount);
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        Exception? exception = null;
+
+        try
+        {
+            await operation.ConfigureAwait(false);
+        }
+        catch (Exception caught)
+        {
+            exception = caught;
+            throw;
+        }
+        finally
+        {
+            SignalynxDiagnostics.RecordPublish(
+                operationName,
+                messageType,
+                handlerCount,
+                started,
+                exception);
+            SignalynxDiagnostics.CompleteActivity(activity, exception);
         }
     }
 }
