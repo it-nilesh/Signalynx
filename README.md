@@ -591,7 +591,7 @@ dotnet run --project samples/Signalynx.Samples.Api
 dotnet pack src/Signalynx.Core -c Release
 ```
 
-BenchmarkDotNet scenarios include direct calls, cached delegates, reflection fallback, `ValueTask` dispatch, commands, queries, requests, notifications, events, diagnostics overhead, sequential/parallel publishing, one/three behavior pipelines, serialization, and enqueue cost. Dispatch, pipeline, diagnostics, and messaging benchmarks emit disassembly reports through BenchmarkDotNet. Always run benchmarks in Release mode without a debugger.
+BenchmarkDotNet scenarios include direct calls, cached delegates, reflection fallback, `ValueTask` dispatch, generated descriptor dispatch, one-million generated dispatch load tests, commands, queries, requests, notifications, events, diagnostics overhead, sequential/parallel publishing, one/three behavior pipelines, serialization, and enqueue cost. Dispatch, generated dispatch, pipeline, diagnostics, and messaging benchmarks emit allocation measurements; selected dispatch benchmarks also emit disassembly reports through BenchmarkDotNet. Always run benchmarks in Release mode without a debugger.
 
 ## Testing
 
@@ -614,6 +614,9 @@ Create a `ServiceCollection`, call `AddSignalynx`, and resolve `ISignalynx`. Tes
 
 ## Roadmap
 
+- Real NativeAOT sample app with publish/run validation in CI
+- Transport and durable store integration tests with Docker-backed brokers/databases
+- High-throughput end-to-end messaging benchmark covering transport, outbox, inbox, and handler execution
 - .NET 10 target after the support baseline is adopted
 - Signed packages, Source Link, API compatibility checks, and release automation
 
