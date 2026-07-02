@@ -93,6 +93,42 @@ public sealed class GeneratedDispatchAndAotTests
     }
 
     [Fact]
+    public async Task Descriptor_registered_dispatch_handles_large_generated_load()
+    {
+        const int operations = 100_000;
+        using var provider = CreateGeneratedDispatchProvider();
+        var mediator = provider.GetRequiredService<ISignalynx>();
+        long total = 0;
+
+        for (var i = 0; i < operations; i++)
+        {
+            total += await mediator.DispatchAsync<GeneratedValueCommand, int>(new GeneratedValueCommand(1));
+        }
+
+        Assert.Equal(operations * 2L, total);
+    }
+
+    [Fact]
+    public async Task Descriptor_registered_dispatch_handles_parallel_generated_load()
+    {
+        const int operations = 100_000;
+        using var provider = CreateGeneratedDispatchProvider();
+        var mediator = provider.GetRequiredService<ISignalynx>();
+        long total = 0;
+
+        await Parallel.ForAsync(
+            0,
+            operations,
+            async (_, _) =>
+            {
+                var result = await mediator.DispatchAsync<GeneratedValueCommand, int>(new GeneratedValueCommand(1));
+                Interlocked.Add(ref total, result);
+            });
+
+        Assert.Equal(operations * 2L, total);
+    }
+
+    [Fact]
     public void Descriptor_registration_still_detects_duplicate_single_handlers()
     {
         var services = new ServiceCollection();
@@ -194,6 +230,20 @@ public sealed class GeneratedDispatchAndAotTests
         return paths
             .Select(static path => MetadataReference.CreateFromFile(path))
             .ToArray();
+    }
+
+    private static ServiceProvider CreateGeneratedDispatchProvider()
+    {
+        var services = new ServiceCollection();
+        services.AddSignalynx(
+            [
+                new HandlerDescriptor(
+                    typeof(ICommandHandler<GeneratedValueCommand, int>),
+                    typeof(GeneratedValueCommandHandler),
+                    AllowsMultiple: false)
+            ]);
+
+        return services.BuildServiceProvider();
     }
 }
 
