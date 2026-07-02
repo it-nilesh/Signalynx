@@ -23,6 +23,10 @@
     <ProjectReference Include="../../src/Signalynx.Logging/Signalynx.Logging.csproj" />
     <ProjectReference Include="../../src/Signalynx.Validation/Signalynx.Validation.csproj" />
     <ProjectReference Include="../../src/Signalynx.Messaging/Signalynx.Messaging.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Transports.AmazonSqs/Signalynx.Transports.AmazonSqs.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Transports.AzureServiceBus/Signalynx.Transports.AzureServiceBus.csproj" />
     <ProjectReference Include="../../src/Signalynx.Transports.InMemory/Signalynx.Transports.InMemory.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Transports.Kafka/Signalynx.Transports.Kafka.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Transports.RabbitMQ/Signalynx.Transports.RabbitMQ.csproj" />
   </ItemGroup>
 </Project>
