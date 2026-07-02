@@ -1,23 +1,36 @@
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Diagnosers;
 using Signalynx.Messaging;
 
 namespace Signalynx.Performance;
 
 [MemoryDiagnoser]
+[DisassemblyDiagnoser(
+    maxDepth: 3,
+    printSource: true,
+    exportGithubMarkdown: true,
+    exportHtml: true,
+    exportCombinedDisassemblyReport: true)]
 public class MessagingBenchmarks
 {
     private ISignalynxMessageBus _bus = null!;
+    private IMessageSerializer _serializer = null!;
     private BenchmarkTransportMessage _message = null!;
 
     [GlobalSetup]
     public void Setup()
     {
+        _serializer = new SystemTextJsonMessageSerializer();
         _bus = new SignalynxMessageBus(
             new DiscardingOutboxStore(),
-            new SystemTextJsonMessageSerializer(),
+            _serializer,
             TimeProvider.System);
         _message = new BenchmarkTransportMessage(Guid.NewGuid(), "benchmark");
     }
+
+    [Benchmark(Baseline = true)]
+    public byte[] SerializeOnly() =>
+        _serializer.Serialize(_message);
 
     [Benchmark]
     public ValueTask<Guid> SerializeAndEnqueue() =>

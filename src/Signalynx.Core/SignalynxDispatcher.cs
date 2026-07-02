@@ -4,19 +4,40 @@ public sealed class SignalynxDispatcher
 {
     private readonly IServiceProvider _services;
     private readonly PipelineExecutor _pipelines;
+    private readonly SignalynxOptions _options;
 
-    public SignalynxDispatcher(IServiceProvider services, PipelineExecutor pipelines)
+    public SignalynxDispatcher(
+        IServiceProvider services,
+        PipelineExecutor pipelines,
+        SignalynxOptions options)
     {
         _services = services;
         _pipelines = pipelines;
+        _options = options;
     }
 
     public ValueTask DispatchAsync<TCommand>(TCommand command, CancellationToken cancellationToken)
         where TCommand : ICommand
     {
+        if (_options.EnableDiagnostics)
+        {
+            return AwaitUnit(TrackAsync(
+                () => ExecuteCommandAsync(command, cancellationToken),
+                "command",
+                typeof(TCommand)));
+        }
+
+        return AwaitUnit(ExecuteCommandAsync(command, cancellationToken));
+    }
+
+    private ValueTask<Unit> ExecuteCommandAsync<TCommand>(
+        TCommand command,
+        CancellationToken cancellationToken)
+        where TCommand : ICommand
+    {
         var handler = Required<ICommandHandler<TCommand>, TCommand>();
         var behaviors = Services<IPipelineBehavior<TCommand, Unit>>();
-        return AwaitUnit(_pipelines.ExecuteAsync(
+        return _pipelines.ExecuteAsync(
             command,
             behaviors,
             async () =>
@@ -24,7 +45,7 @@ public sealed class SignalynxDispatcher
                 await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
                 return Unit.Value;
             },
-            cancellationToken));
+            cancellationToken);
     }
 
     public ValueTask<TResult> DispatchAsync<TCommand, TResult>(
@@ -33,6 +54,7 @@ public sealed class SignalynxDispatcher
         where TCommand : ICommand<TResult> =>
         ExecuteAsync<TCommand, TResult, ICommandHandler<TCommand, TResult>>(
             command,
+            "command",
             static (handler, message, token) => handler.HandleAsync(message, token),
             cancellationToken);
 
@@ -42,6 +64,7 @@ public sealed class SignalynxDispatcher
         where TQuery : IQuery<TResult> =>
         ExecuteAsync<TQuery, TResult, IQueryHandler<TQuery, TResult>>(
             query,
+            "query",
             static (handler, message, token) => handler.HandleAsync(message, token),
             cancellationToken);
 
@@ -51,10 +74,26 @@ public sealed class SignalynxDispatcher
         where TRequest : IRequest<TResult> =>
         ExecuteAsync<TRequest, TResult, IRequestHandler<TRequest, TResult>>(
             request,
+            "request",
             static (handler, message, token) => handler.HandleAsync(message, token),
             cancellationToken);
 
     private ValueTask<TResult> ExecuteAsync<TMessage, TResult, THandler>(
+        TMessage message,
+        string operationName,
+        Func<THandler, TMessage, CancellationToken, ValueTask<TResult>> invoke,
+        CancellationToken cancellationToken)
+        where THandler : notnull
+    {
+        return _options.EnableDiagnostics
+            ? TrackAsync(
+                () => ExecuteWithHandlerAsync(message, invoke, cancellationToken),
+                operationName,
+                typeof(TMessage))
+            : ExecuteWithHandlerAsync(message, invoke, cancellationToken);
+    }
+
+    private ValueTask<TResult> ExecuteWithHandlerAsync<TMessage, TResult, THandler>(
         TMessage message,
         Func<THandler, TMessage, CancellationToken, ValueTask<TResult>> invoke,
         CancellationToken cancellationToken)
@@ -67,6 +106,38 @@ public sealed class SignalynxDispatcher
             behaviors,
             () => invoke(handler, message, cancellationToken),
             cancellationToken);
+    }
+
+    private async ValueTask<TResult> TrackAsync<TResult>(
+        Func<ValueTask<TResult>> operation,
+        string operationName,
+        Type messageType)
+    {
+        var activity = SignalynxDiagnostics.StartActivity(
+            _options.EnableDiagnostics,
+            operationName,
+            messageType);
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        Exception? exception = null;
+
+        try
+        {
+            return await operation().ConfigureAwait(false);
+        }
+        catch (Exception caught)
+        {
+            exception = caught;
+            throw;
+        }
+        finally
+        {
+            SignalynxDiagnostics.RecordDispatch(
+                operationName,
+                messageType,
+                started,
+                exception);
+            SignalynxDiagnostics.CompleteActivity(activity, exception);
+        }
     }
 
     private THandler Required<THandler, TMessage>() where THandler : notnull =>
