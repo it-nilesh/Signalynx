@@ -22,6 +22,8 @@ The performance goal is low dispatch overhead—not a claim that real business l
 | `Signalynx.SourceGeneration` | Optional compile-time handler registration |
 | `Signalynx.Messaging` | Durable messaging contracts, workers, retries, inbox/outbox, and operations |
 | `Signalynx.Transports.InMemory` | Development/test transport and non-persistent stores |
+| `Signalynx.Stores.SqlServer` | SQL Server durable inbox, outbox, and dead-letter stores |
+| `Signalynx.Stores.PostgreSql` | PostgreSQL durable inbox, outbox, and dead-letter stores |
 
 ## Installation
 
@@ -32,6 +34,8 @@ dotnet add package Signalynx.DependencyInjection
 dotnet add package Signalynx.Logging
 dotnet add package Signalynx.Validation
 dotnet add package Signalynx.Messaging
+dotnet add package Signalynx.Stores.SqlServer
+dotnet add package Signalynx.Stores.PostgreSql
 ```
 
 For local development, reference the projects in `src/`.
@@ -200,8 +204,41 @@ outbox insert to participate in the same database transaction. The interfaces
 support that architecture, but transaction enlistment belongs in each database
 provider.
 
+Signalynx ships durable store adapters for SQL Server and PostgreSQL. Each
+store implements `IOutboxStore`, `IInboxStore`, and `IDeadLetterStore` over a
+database-specific client abstraction so applications can bind raw ADO.NET,
+Dapper, EF Core, or a transaction-enlisted implementation.
+
+Example SQL Server registration:
+
+```csharp
+builder.Services.AddSingleton<ISqlServerMessageStoreClient, SqlServerStoreClient>();
+builder.Services.AddSignalynxSqlServerStores(options =>
+{
+    options.Schema = "messaging";
+    options.OutboxTable = "outbox";
+    options.InboxTable = "inbox";
+    options.DeadLetterTable = "dead_letters";
+});
+```
+
+PostgreSQL uses the same shape through `IPostgreSqlMessageStoreClient` and
+`AddSignalynxPostgreSqlStores`.
+
+For high-throughput workloads, the SQL Server and PostgreSQL stores also
+implement optional batch interfaces:
+
+- `IBatchOutboxStore`
+- `IBatchInboxStore`
+- `IBatchDeadLetterStore`
+
+Provider clients should implement these batch methods with bulk insert/update
+commands, table-valued parameters, `COPY`, array parameters, partition-aware
+queries, or equivalent database-specific primitives. Avoid one database
+round-trip per message when processing large streams.
+
 Signalynx does not yet ship RabbitMQ, Kafka, Azure Service Bus, Amazon SQS,
-SQL Server, PostgreSQL, or other provider-specific adapters.
+or other provider-specific transport adapters.
 
 ## Production Configuration
 
@@ -253,9 +290,8 @@ Production deployments must register real providers:
 
 ```csharp
 builder.Services.AddSingleton<IMessageTransport, ProductionTransport>();
-builder.Services.AddSingleton<IOutboxStore, SqlOutboxStore>();
-builder.Services.AddSingleton<IInboxStore, SqlInboxStore>();
-builder.Services.AddSingleton<IDeadLetterStore, SqlDeadLetterStore>();
+builder.Services.AddSingleton<ISqlServerMessageStoreClient, SqlServerStoreClient>();
+builder.Services.AddSignalynxSqlServerStores();
 ```
 
 These implementations are application- or vendor-specific. Do not register
@@ -543,7 +579,6 @@ Create a `ServiceCollection`, call `AddSignalynx`, and resolve `ISignalynx`. Tes
 - Generated direct-dispatch and pipeline delegates
 - NativeAOT/trimming annotations and test matrix
 - RabbitMQ, Azure Service Bus, Amazon SQS, and Kafka transport adapters
-- SQL Server and PostgreSQL durable inbox/outbox providers
 - .NET 10 target after the support baseline is adopted
 - Signed packages, Source Link, API compatibility checks, and release automation
 
