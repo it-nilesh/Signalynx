@@ -588,6 +588,7 @@ dotnet build Signalynx.slnx -c Release
 dotnet test tests/Signalynx.Tests -c Release
 dotnet run -c Release --project benchmarks/Signalynx.Performance
 dotnet run --project samples/Signalynx.Samples.Api
+dotnet publish samples/Signalynx.Samples.NativeAot -c Release -r linux-x64 --self-contained true
 dotnet pack src/Signalynx.Core -c Release
 ```
 
@@ -614,11 +615,25 @@ Create a `ServiceCollection`, call `AddSignalynx`, and resolve `ISignalynx`. Tes
 
 ## Roadmap
 
+Completed foundation:
+
+- Generated descriptor registration and cached dispatch delegates
+- NativeAOT/trimming annotations on the core registration path
 - Real NativeAOT sample app with publish/run validation in CI
-- Transport and durable store integration tests with Docker-backed brokers/databases
-- High-throughput end-to-end messaging benchmark covering transport, outbox, inbox, and handler execution
+- Diagnostic events, metrics, and OpenTelemetry documentation
+- Benchmark comparisons, allocation measurements, and generated dispatch load benchmarks
+- RabbitMQ, Azure Service Bus, Amazon SQS, and Kafka transport adapters
+- SQL Server and PostgreSQL durable inbox, outbox, and dead-letter store adapters
+
+Next milestones:
+
+- Docker-backed integration tests for RabbitMQ, Kafka, SQL Server, and PostgreSQL providers
+- End-to-end messaging load benchmark covering transport, outbox, inbox, retries, and handler execution
+- Provider implementation samples for official broker/database SDKs
+- Durable store concurrency validation for leases, duplicate delivery, retry races, and dead-letter replay
+- API compatibility checks and public API approval files
+- Source Link, signed packages, deterministic package validation, and release automation
 - .NET 10 target after the support baseline is adopted
-- Signed packages, Source Link, API compatibility checks, and release automation
 
 ## License
 

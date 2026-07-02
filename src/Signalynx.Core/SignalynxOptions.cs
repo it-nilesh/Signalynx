@@ -49,20 +49,27 @@ public sealed class SignalynxOptions
         return this;
     }
 
-    public SignalynxOptions AddBehavior<TBehavior>()
+    public SignalynxOptions AddBehavior<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        TBehavior>()
     {
         PipelineBehaviors.Add(typeof(TBehavior));
         return this;
     }
 
-    public SignalynxOptions AddOpenBehavior(Type behaviorType)
+    public SignalynxOptions AddOpenBehavior(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        Type behaviorType)
     {
         ValidateOpenBehavior(behaviorType, nameof(behaviorType));
         OpenPipelineBehaviors.Add(behaviorType);
         return this;
     }
 
-    private static void ValidateOpenBehavior(Type behaviorType, string parameterName)
+    private static void ValidateOpenBehavior(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        Type behaviorType,
+        string parameterName)
     {
         ArgumentNullException.ThrowIfNull(behaviorType, parameterName);
         if (!behaviorType.IsGenericTypeDefinition || behaviorType.GetGenericArguments().Length != 2)

@@ -1,0 +1,37 @@
+name: NativeAOT
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  publish-run:
+    name: Publish and run NativeAOT sample
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Install NativeAOT toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang zlib1g-dev
+
+      - name: Restore
+        run: dotnet restore Signalynx.slnx
+
+      - name: Publish NativeAOT sample
+        run: dotnet publish samples/Signalynx.Samples.NativeAot/Signalynx.Samples.NativeAot.csproj -c Release -r linux-x64 --self-contained true
+
+      - name: Run NativeAOT sample
+        run: samples/Signalynx.Samples.NativeAot/bin/Release/net9.0/linux-x64/publish/Signalynx.Samples.NativeAot

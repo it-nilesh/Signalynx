@@ -4,6 +4,7 @@
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/Signalynx.Samples.Api/Signalynx.Samples.Api.csproj" />
+    <Project Path="samples/Signalynx.Samples.NativeAot/Signalynx.Samples.NativeAot.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Signalynx.Abstractions/Signalynx.Abstractions.csproj" />

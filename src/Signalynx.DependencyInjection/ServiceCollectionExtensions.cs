@@ -169,6 +169,10 @@ public static class ServiceCollectionExtensions
         }
     }
 
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2072",
+        Justification = "Pipeline behavior types enter through annotated SignalynxOptions APIs; the analyzer cannot retain that annotation after storage in the options list.")]
     private static void RegisterBehaviors(IServiceCollection services, SignalynxOptions options)
     {
         for (var i = 0; i < options.OpenPipelineBehaviors.Count; i++)
