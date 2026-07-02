@@ -551,10 +551,22 @@ handler idempotency, deployment, and operations.
 Add `Signalynx.SourceGeneration` as an analyzer to generate:
 
 ```csharp
-services.AddSignalynxGeneratedHandlers();
+services.AddSignalynxGenerated(options =>
+{
+    options.AddOpenBehavior(typeof(LoggingBehavior<,>));
+});
 ```
 
-The generator emits DI registrations, a static handler map, and duplicate single-handler diagnostic `SLX001`. Runtime assembly scanning remains fully supported. Compile-time pipeline composition and direct generated dispatch are roadmap items.
+The generator emits DI registrations, `HandlerDescriptor` metadata, a static
+handler map, and duplicate single-handler diagnostic `SLX001`.
+`AddSignalynxGenerated` registers the generated descriptors without runtime
+assembly scanning, which is the preferred path for trimmed and NativeAOT
+applications.
+
+Runtime assembly scanning remains fully supported through `AddSignalynx(options
+=> options.RegisterServicesFromAssembly(...))`, but those APIs are annotated
+with `RequiresUnreferencedCode` because linkers cannot statically preserve every
+handler discovered by reflection.
 
 ## Minimal APIs and ASP.NET Core
 
@@ -594,14 +606,14 @@ Create a `ServiceCollection`, call `AddSignalynx`, and resolve `ISignalynx`. Tes
 - Async-only API with cancellation propagation
 - Sequential publishing as the predictable low-overhead default
 - Optional source-generated registration
+- Cached direct dispatch delegates and no-behavior pipeline fast paths
 - BenchmarkDotNet with allocation and GC measurements
 
-`EnableDelegateCaching` reserves a stable configuration point for upcoming optimized dispatch caches. `EnableDiagnostics` turns on core dispatch and publish activities and metrics.
+`EnableDelegateCaching` is enabled by default for optimized dispatch caches.
+`EnableDiagnostics` turns on core dispatch and publish activities and metrics.
 
 ## Roadmap
 
-- Generated direct-dispatch and pipeline delegates
-- NativeAOT/trimming annotations and test matrix
 - .NET 10 target after the support baseline is adopted
 - Signed packages, Source Link, API compatibility checks, and release automation
 

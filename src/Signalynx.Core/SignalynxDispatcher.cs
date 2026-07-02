@@ -37,14 +37,22 @@ public sealed class SignalynxDispatcher
     {
         var handler = Required<ICommandHandler<TCommand>, TCommand>();
         var behaviors = Services<IPipelineBehavior<TCommand, Unit>>();
+        var invoke = _options.EnableDelegateCaching
+            ? CommandDispatchDelegateCache<TCommand>.Invoke
+            : static async (ICommandHandler<TCommand> handler, TCommand command, CancellationToken token) =>
+            {
+                await handler.HandleAsync(command, token).ConfigureAwait(false);
+                return Unit.Value;
+            };
+
         return _pipelines.ExecuteAsync(
             command,
             behaviors,
-            async () =>
-            {
-                await handler.HandleAsync(command, cancellationToken).ConfigureAwait(false);
-                return Unit.Value;
-            },
+            (handler, command, cancellationToken, invoke),
+            static state => state.invoke(
+                state.handler,
+                state.command,
+                state.cancellationToken),
             cancellationToken);
     }
 
@@ -55,7 +63,9 @@ public sealed class SignalynxDispatcher
         ExecuteAsync<TCommand, TResult, ICommandHandler<TCommand, TResult>>(
             command,
             "command",
-            static (handler, message, token) => handler.HandleAsync(message, token),
+            _options.EnableDelegateCaching
+                ? CommandDispatchDelegateCache<TCommand, TResult>.Invoke
+                : static (handler, message, token) => handler.HandleAsync(message, token),
             cancellationToken);
 
     public ValueTask<TResult> QueryAsync<TQuery, TResult>(
@@ -65,7 +75,9 @@ public sealed class SignalynxDispatcher
         ExecuteAsync<TQuery, TResult, IQueryHandler<TQuery, TResult>>(
             query,
             "query",
-            static (handler, message, token) => handler.HandleAsync(message, token),
+            _options.EnableDelegateCaching
+                ? QueryDispatchDelegateCache<TQuery, TResult>.Invoke
+                : static (handler, message, token) => handler.HandleAsync(message, token),
             cancellationToken);
 
     public ValueTask<TResult> RequestAsync<TRequest, TResult>(
@@ -75,13 +87,15 @@ public sealed class SignalynxDispatcher
         ExecuteAsync<TRequest, TResult, IRequestHandler<TRequest, TResult>>(
             request,
             "request",
-            static (handler, message, token) => handler.HandleAsync(message, token),
+            _options.EnableDelegateCaching
+                ? RequestDispatchDelegateCache<TRequest, TResult>.Invoke
+                : static (handler, message, token) => handler.HandleAsync(message, token),
             cancellationToken);
 
     private ValueTask<TResult> ExecuteAsync<TMessage, TResult, THandler>(
         TMessage message,
         string operationName,
-        Func<THandler, TMessage, CancellationToken, ValueTask<TResult>> invoke,
+        DispatchHandlerInvoker<THandler, TMessage, TResult> invoke,
         CancellationToken cancellationToken)
         where THandler : notnull
     {
@@ -95,7 +109,7 @@ public sealed class SignalynxDispatcher
 
     private ValueTask<TResult> ExecuteWithHandlerAsync<TMessage, TResult, THandler>(
         TMessage message,
-        Func<THandler, TMessage, CancellationToken, ValueTask<TResult>> invoke,
+        DispatchHandlerInvoker<THandler, TMessage, TResult> invoke,
         CancellationToken cancellationToken)
         where THandler : notnull
     {
@@ -104,7 +118,8 @@ public sealed class SignalynxDispatcher
         return _pipelines.ExecuteAsync(
             message,
             behaviors,
-            () => invoke(handler, message, cancellationToken),
+            (handler, message, cancellationToken, invoke),
+            static state => state.invoke(state.handler, state.message, state.cancellationToken),
             cancellationToken);
     }
 
@@ -153,7 +168,7 @@ public sealed class SignalynxDispatcher
     private static async ValueTask AwaitUnit(ValueTask<Unit> operation) =>
         await operation.ConfigureAwait(false);
 
-    private readonly record struct Unit
+    internal readonly record struct Unit
     {
         public static Unit Value => default;
     }

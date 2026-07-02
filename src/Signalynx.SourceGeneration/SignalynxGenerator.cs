@@ -112,6 +112,17 @@ public sealed class SignalynxGenerator : IIncrementalGenerator
         source.AppendLine("{");
         source.AppendLine("    public static class SignalynxGeneratedServiceCollectionExtensions");
         source.AppendLine("    {");
+        source.AppendLine("        public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection AddSignalynxGenerated(");
+        source.AppendLine("            this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services,");
+        source.AppendLine("            global::System.Action<global::Signalynx.SignalynxOptions>? configure = null)");
+        source.AppendLine("        {");
+        source.AppendLine("            global::System.ArgumentNullException.ThrowIfNull(services);");
+        source.AppendLine("            return global::Signalynx.ServiceCollectionExtensions.AddSignalynx(");
+        source.AppendLine("                services,");
+        source.AppendLine("                SignalynxGeneratedHandlerMap.Descriptors,");
+        source.AppendLine("                configure);");
+        source.AppendLine("        }");
+        source.AppendLine();
         source.AppendLine("        public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection AddSignalynxGeneratedHandlers(");
         source.AppendLine("            this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)");
         source.AppendLine("        {");
@@ -135,6 +146,25 @@ public sealed class SignalynxGenerator : IIncrementalGenerator
         source.AppendLine();
         source.AppendLine("    internal static class SignalynxGeneratedHandlerMap");
         source.AppendLine("    {");
+        source.AppendLine("        internal static readonly global::Signalynx.HandlerDescriptor[] Descriptors =");
+        source.AppendLine("        {");
+
+        foreach (var handler in handlers)
+        {
+            foreach (var registration in handler.Registrations)
+            {
+                source.Append("            new global::Signalynx.HandlerDescriptor(typeof(");
+                source.Append(registration.ServiceType);
+                source.Append("), typeof(");
+                source.Append(handler.ImplementationType);
+                source.Append("), ");
+                source.Append(registration.AllowsMultiple ? "true" : "false");
+                source.AppendLine("),");
+            }
+        }
+
+        source.AppendLine("        };");
+        source.AppendLine();
         source.AppendLine("        internal static readonly global::System.Collections.Generic.IReadOnlyDictionary<global::System.Type, global::System.Type[]> Handlers =");
         source.AppendLine("            new global::System.Collections.Generic.Dictionary<global::System.Type, global::System.Type[]>");
         source.AppendLine("            {");

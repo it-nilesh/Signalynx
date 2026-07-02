@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Signalynx;
@@ -28,6 +29,7 @@ public sealed class SignalynxOptions
 
     public bool EnableDiagnostics { get; set; }
 
+    [RequiresUnreferencedCode("Assembly scanning is not trimming-safe. Use source-generated handler registration for trimmed or NativeAOT applications.")]
     public SignalynxOptions RegisterServicesFromAssembly(Assembly assembly)
     {
         ArgumentNullException.ThrowIfNull(assembly);
@@ -35,6 +37,7 @@ public sealed class SignalynxOptions
         return this;
     }
 
+    [RequiresUnreferencedCode("Assembly scanning is not trimming-safe. Use source-generated handler registration for trimmed or NativeAOT applications.")]
     public SignalynxOptions RegisterServicesFromAssemblies(params Assembly[] assemblies)
     {
         ArgumentNullException.ThrowIfNull(assemblies);

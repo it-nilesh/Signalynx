@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -22,6 +23,7 @@ public static class ServiceCollectionExtensions
         typeof(IEventHandler<>)
     ];
 
+    [RequiresUnreferencedCode("Assembly scanning is not trimming-safe. Use AddSignalynx with generated HandlerDescriptor values for trimmed or NativeAOT applications.")]
     public static IServiceCollection AddSignalynx(
         this IServiceCollection services,
         Action<SignalynxOptions>? configure = null)
@@ -32,26 +34,21 @@ public static class ServiceCollectionExtensions
         configure?.Invoke(options);
 
         var descriptors = Scan(options);
-        Validate(descriptors, options);
+        return AddSignalynxCore(services, descriptors, options);
+    }
 
-        services.TryAddSingleton(options);
-        services.TryAddSingleton(new HandlerRegistry(descriptors));
-        services.TryAddSingleton(new SignalynxBulkOptions());
-        services.TryAddTransient<PipelineExecutor>();
-        services.TryAddTransient<SignalynxDispatcher>();
-        services.TryAddTransient<NotificationPublisher>();
-        services.TryAddTransient<EventPublisher>();
-        services.TryAddTransient<ISignalynx, SignalynxMediator>();
-        services.TryAddTransient<ISignalynxBulkProcessor, SignalynxBulkProcessor>();
+    public static IServiceCollection AddSignalynx(
+        this IServiceCollection services,
+        IReadOnlyList<HandlerDescriptor> descriptors,
+        Action<SignalynxOptions>? configure = null)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(descriptors);
 
-        for (var i = 0; i < descriptors.Count; i++)
-        {
-            var descriptor = descriptors[i];
-            services.AddTransient(descriptor.ServiceType, descriptor.ImplementationType);
-        }
+        var options = new SignalynxOptions();
+        configure?.Invoke(options);
 
-        RegisterBehaviors(services, options);
-        return services;
+        return AddSignalynxCore(services, descriptors, options);
     }
 
     public static IServiceCollection ConfigureSignalynxBulk(
@@ -67,6 +64,45 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2072",
+        Justification = "Generated descriptors preserve public constructors; reflection-scanned descriptors flow only from APIs marked RequiresUnreferencedCode.")]
+    [UnconditionalSuppressMessage(
+        "ReflectionAnalysis",
+        "IL2072",
+        Justification = "Generated descriptors preserve public constructors; reflection-scanned descriptors flow only from APIs marked RequiresUnreferencedCode.")]
+    private static IServiceCollection AddSignalynxCore(
+        IServiceCollection services,
+        IReadOnlyList<HandlerDescriptor> descriptors,
+        SignalynxOptions options)
+    {
+        Validate(descriptors, options);
+
+        services.TryAddSingleton(options);
+        services.TryAddSingleton(new HandlerRegistry(descriptors));
+        services.TryAddSingleton(new SignalynxBulkOptions());
+        services.TryAddTransient<PipelineExecutor>();
+        services.TryAddTransient<SignalynxDispatcher>();
+        services.TryAddTransient<NotificationPublisher>();
+        services.TryAddTransient<EventPublisher>();
+        services.TryAddTransient<ISignalynx, SignalynxMediator>();
+        services.TryAddTransient<ISignalynxBulkProcessor, SignalynxBulkProcessor>();
+
+        for (var i = 0; i < descriptors.Count; i++)
+        {
+            var descriptor = descriptors[i];
+            var implementationType = descriptor.ImplementationType;
+#pragma warning disable IL2072
+            services.AddTransient(descriptor.ServiceType, implementationType);
+#pragma warning restore IL2072
+        }
+
+        RegisterBehaviors(services, options);
+        return services;
+    }
+
+    [RequiresUnreferencedCode("Assembly scanning is not trimming-safe. Use source-generated handler registration for trimmed or NativeAOT applications.")]
     private static List<HandlerDescriptor> Scan(SignalynxOptions options)
     {
         var descriptors = new List<HandlerDescriptor>();
@@ -113,7 +149,7 @@ public static class ServiceCollectionExtensions
         return descriptors;
     }
 
-    private static void Validate(List<HandlerDescriptor> descriptors, SignalynxOptions options)
+    private static void Validate(IReadOnlyList<HandlerDescriptor> descriptors, SignalynxOptions options)
     {
         if (!options.ValidateHandlersOnStartup)
         {
@@ -137,12 +173,22 @@ public static class ServiceCollectionExtensions
     {
         for (var i = 0; i < options.OpenPipelineBehaviors.Count; i++)
         {
+#pragma warning disable IL2072
             services.AddTransient(typeof(IPipelineBehavior<,>), options.OpenPipelineBehaviors[i]);
+#pragma warning restore IL2072
         }
 
         RegisterClosedBehaviors(services, options.PipelineBehaviors, typeof(IPipelineBehavior<,>));
     }
 
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2072",
+        Justification = "Closed behavior types are explicit Type values supplied by application code or generated code and are registered directly with DI.")]
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2075",
+        Justification = "Closed behavior discovery only inspects explicitly supplied behavior types.")]
     private static void RegisterClosedBehaviors(
         IServiceCollection services,
         IReadOnlyList<Type> behaviorTypes,
@@ -172,6 +218,7 @@ public static class ServiceCollectionExtensions
         }
     }
 
+    [RequiresUnreferencedCode("Assembly.GetTypes is not trimming-safe. Use source-generated handler registration for trimmed or NativeAOT applications.")]
     private static Type[] GetLoadableTypes(Assembly assembly)
     {
         try
