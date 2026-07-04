@@ -616,6 +616,17 @@ The tag workflow packs all source projects using the tag version, publishes the
 packages to nuget.org, and creates or updates the GitHub Release with package
 assets and NuGet links.
 
+Safety precautions:
+
+- Secrets are read only from GitHub Actions secrets and are never stored in the
+  repository.
+- Pull requests and normal branch pushes never receive NuGet publishing
+  credentials.
+- Publishing runs only in the canonical `it-nilesh/Signalynx` repository.
+- Release tags must point to commits already contained in `origin/main`.
+- Workflow concurrency prevents two runs for the same ref from publishing at the
+  same time.
+
 BenchmarkDotNet scenarios include direct calls, cached delegates, reflection fallback, `ValueTask` dispatch, generated descriptor dispatch, one-million generated dispatch load tests, commands, queries, requests, notifications, events, diagnostics overhead, sequential/parallel publishing, one/three behavior pipelines, serialization, and enqueue cost. Dispatch, generated dispatch, pipeline, diagnostics, and messaging benchmarks emit allocation measurements; selected dispatch benchmarks also emit disassembly reports through BenchmarkDotNet. Always run benchmarks in Release mode without a debugger.
 
 ### Docker provider load results
