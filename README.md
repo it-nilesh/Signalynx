@@ -1,5 +1,8 @@
 # Signalynx
 
+[![NuGet](https://img.shields.io/nuget/v/Signalynx.Core.svg)](https://www.nuget.org/packages/Signalynx.Core)
+[![NuGet downloads](https://img.shields.io/nuget/dt/Signalynx.Core.svg)](https://www.nuget.org/packages/Signalynx.Core)
+
 Signalynx is a high-performance mediator, dispatcher, and lightweight in-process messaging abstraction for .NET 8, .NET 9, and .NET 10. It supports CQRS commands, queries, request/response messages, notifications, domain events, pipeline behaviors, and bulk processing through a small, strongly typed API.
 
 Signalynx is built from scratch. It does not depend on ASP.NET Core or an external messaging framework.
@@ -14,20 +17,20 @@ The performance goal is low dispatch overhead—not a claim that real business l
 
 | Package | Purpose |
 | --- | --- |
-| `Signalynx.Abstractions` | Messages, handlers, pipelines, and mediator contracts |
-| `Signalynx.Core` | In-process mediator, publishers, registry, and bulk processor |
-| `Signalynx.DependencyInjection` | Assembly scanning and Microsoft DI registration |
-| `Signalynx.Validation` | Optional FluentValidation behaviors |
-| `Signalynx.Logging` | Optional Microsoft.Extensions.Logging behaviors |
-| `Signalynx.SourceGeneration` | Optional compile-time handler registration |
-| `Signalynx.Messaging` | Durable messaging contracts, workers, retries, inbox/outbox, and operations |
-| `Signalynx.Transports.InMemory` | Development/test transport and non-persistent stores |
-| `Signalynx.Stores.SqlServer` | SQL Server durable inbox, outbox, and dead-letter stores |
-| `Signalynx.Stores.PostgreSql` | PostgreSQL durable inbox, outbox, and dead-letter stores |
-| `Signalynx.Transports.RabbitMQ` | RabbitMQ transport adapter |
-| `Signalynx.Transports.AzureServiceBus` | Azure Service Bus transport adapter |
-| `Signalynx.Transports.AmazonSqs` | Amazon SQS transport adapter |
-| `Signalynx.Transports.Kafka` | Kafka transport adapter |
+| [`Signalynx.Abstractions`](https://www.nuget.org/packages/Signalynx.Abstractions) | Messages, handlers, pipelines, and mediator contracts |
+| [`Signalynx.Core`](https://www.nuget.org/packages/Signalynx.Core) | In-process mediator, publishers, registry, and bulk processor |
+| [`Signalynx.DependencyInjection`](https://www.nuget.org/packages/Signalynx.DependencyInjection) | Assembly scanning and Microsoft DI registration |
+| [`Signalynx.Validation`](https://www.nuget.org/packages/Signalynx.Validation) | Optional FluentValidation behaviors |
+| [`Signalynx.Logging`](https://www.nuget.org/packages/Signalynx.Logging) | Optional Microsoft.Extensions.Logging behaviors |
+| [`Signalynx.SourceGeneration`](https://www.nuget.org/packages/Signalynx.SourceGeneration) | Optional compile-time handler registration |
+| [`Signalynx.Messaging`](https://www.nuget.org/packages/Signalynx.Messaging) | Durable messaging contracts, workers, retries, inbox/outbox, and operations |
+| [`Signalynx.Transports.InMemory`](https://www.nuget.org/packages/Signalynx.Transports.InMemory) | Development/test transport and non-persistent stores |
+| [`Signalynx.Stores.SqlServer`](https://www.nuget.org/packages/Signalynx.Stores.SqlServer) | SQL Server durable inbox, outbox, and dead-letter stores |
+| [`Signalynx.Stores.PostgreSql`](https://www.nuget.org/packages/Signalynx.Stores.PostgreSql) | PostgreSQL durable inbox, outbox, and dead-letter stores |
+| [`Signalynx.Transports.RabbitMQ`](https://www.nuget.org/packages/Signalynx.Transports.RabbitMQ) | RabbitMQ transport adapter |
+| [`Signalynx.Transports.AzureServiceBus`](https://www.nuget.org/packages/Signalynx.Transports.AzureServiceBus) | Azure Service Bus transport adapter |
+| [`Signalynx.Transports.AmazonSqs`](https://www.nuget.org/packages/Signalynx.Transports.AmazonSqs) | Amazon SQS transport adapter |
+| [`Signalynx.Transports.Kafka`](https://www.nuget.org/packages/Signalynx.Transports.Kafka) | Kafka transport adapter |
 
 ## Installation
 
