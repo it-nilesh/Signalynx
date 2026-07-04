@@ -3,7 +3,21 @@ using Signalynx;
 
 var services = new ServiceCollection();
 services.AddSingleton<NativeAotCounter>();
-services.AddSignalynxGenerated();
+services.AddSignalynx(
+    [
+        new HandlerDescriptor(
+            typeof(ICommandHandler<IncrementCounterCommand>),
+            typeof(IncrementCounterHandler),
+            AllowsMultiple: false),
+        new HandlerDescriptor(
+            typeof(ICommandHandler<DoubleValueCommand, int>),
+            typeof(DoubleValueHandler),
+            AllowsMultiple: false),
+        new HandlerDescriptor(
+            typeof(IQueryHandler<GreetingQuery, string>),
+            typeof(GreetingQueryHandler),
+            AllowsMultiple: false)
+    ]);
 
 using var provider = services.BuildServiceProvider();
 var signalynx = provider.GetRequiredService<ISignalynx>();

@@ -14,8 +14,5 @@
     <ProjectReference Include="../../src/Signalynx.Abstractions/Signalynx.Abstractions.csproj" />
     <ProjectReference Include="../../src/Signalynx.Core/Signalynx.Core.csproj" />
     <ProjectReference Include="../../src/Signalynx.DependencyInjection/Signalynx.DependencyInjection.csproj" />
-    <ProjectReference Include="../../src/Signalynx.SourceGeneration/Signalynx.SourceGeneration.csproj"
-                      OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 </Project>
