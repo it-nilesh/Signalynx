@@ -1,6 +1,6 @@
 # Signalynx
 
-Signalynx is a high-performance mediator, dispatcher, and lightweight in-process messaging abstraction for .NET 8 and .NET 9. It supports CQRS commands, queries, request/response messages, notifications, domain events, pipeline behaviors, and bulk processing through a small, strongly typed API.
+Signalynx is a high-performance mediator, dispatcher, and lightweight in-process messaging abstraction for .NET 8, .NET 9, and .NET 10. It supports CQRS commands, queries, request/response messages, notifications, domain events, pipeline behaviors, and bulk processing through a small, strongly typed API.
 
 Signalynx is built from scratch. It does not depend on ASP.NET Core or an external messaging framework.
 
@@ -688,11 +688,11 @@ Completed foundation:
 - Provider implementation samples for official broker/database SDKs
 - Durable store concurrency validation for leases, duplicate delivery, retry races, and dead-letter replay
 - API compatibility checks and public API approval files
+- .NET 10 target support after the support baseline adoption
 
 Next milestones:
 
 - Source Link, signed packages, deterministic package validation, and release automation
-- .NET 10 target after the support baseline is adopted
 
 ## License
 

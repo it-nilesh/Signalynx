@@ -136,6 +136,11 @@ public sealed class PublicApiApprovalTests
             return $"{FormatType(type.GetElementType()!)}[]";
         }
 
+        if (type.IsByRef)
+        {
+            return $"{FormatType(type.GetElementType()!)}&";
+        }
+
         if (!type.IsGenericType)
         {
             return type.FullName ?? type.Name;

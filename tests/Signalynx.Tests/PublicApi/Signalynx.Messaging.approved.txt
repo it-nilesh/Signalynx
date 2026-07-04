@@ -122,7 +122,7 @@ class Signalynx.Messaging.MessageEnvelope
   property System.Guid Id { get; set; }
   property System.String MessageType { get; set; }
   method Signalynx.Messaging.MessageEnvelope <Clone>$()
-  method System.Void Deconstruct(System.Guid& Id, System.String& MessageType, System.String& Destination, System.String& ContentType, System.ReadOnlyMemory`1[[System.Byte, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]& Body, System.Collections.Generic.IReadOnlyDictionary`2[[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]& Headers, System.DateTimeOffset& CreatedAt, System.Nullable`1[[System.DateTimeOffset, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]& DeliverAt, System.Nullable`1[[System.Guid, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]& CorrelationId, System.Nullable`1[[System.Guid, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]& CausationId)
+  method System.Void Deconstruct(System.Guid& Id, System.String& MessageType, System.String& Destination, System.String& ContentType, System.ReadOnlyMemory<System.Byte>& Body, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>& Headers, System.DateTimeOffset& CreatedAt, System.Nullable<System.DateTimeOffset>& DeliverAt, System.Nullable<System.Guid>& CorrelationId, System.Nullable<System.Guid>& CausationId)
   method System.Boolean Equals(Signalynx.Messaging.MessageEnvelope other)
   method System.Boolean Equals(System.Object obj)
   method System.Int32 GetHashCode()
@@ -153,7 +153,7 @@ class Signalynx.Messaging.OutboxMessage
   property System.Nullable<System.DateTimeOffset> LockedUntil { get; set; }
   property System.DateTimeOffset NextAttempt { get; set; }
   method Signalynx.Messaging.OutboxMessage <Clone>$()
-  method System.Void Deconstruct(Signalynx.Messaging.MessageEnvelope& Envelope, System.Int32& Attempt, System.DateTimeOffset& NextAttempt, System.Nullable`1[[System.DateTimeOffset, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]& LockedUntil, System.String& LastError)
+  method System.Void Deconstruct(Signalynx.Messaging.MessageEnvelope& Envelope, System.Int32& Attempt, System.DateTimeOffset& NextAttempt, System.Nullable<System.DateTimeOffset>& LockedUntil, System.String& LastError)
   method System.Boolean Equals(Signalynx.Messaging.OutboxMessage other)
   method System.Boolean Equals(System.Object obj)
   method System.Int32 GetHashCode()
