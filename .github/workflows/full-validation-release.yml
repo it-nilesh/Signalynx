@@ -1,0 +1,201 @@
+name: Full validation and release
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  push:
+    branches:
+      - develop
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CONFIGURATION: Release
+  DOTNET_NOLOGO: true
+
+jobs:
+  validate:
+    name: Build, test, integration, and NativeAOT
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore Signalynx.slnx
+
+      - name: Build
+        run: dotnet build Signalynx.slnx -c "$CONFIGURATION" --no-restore -m:1 -nr:false
+
+      - name: Unit tests
+        run: dotnet test tests/Signalynx.Tests/Signalynx.Tests.csproj -c "$CONFIGURATION" --no-build --no-restore -m:1 -nr:false
+
+      - name: Start integration providers
+        run: docker compose -f docker-compose.integration.yml up -d --wait
+
+      - name: Docker-backed integration tests
+        env:
+          SIGNALYNX_DOCKER_INTEGRATION: "1"
+        run: dotnet test tests/Signalynx.Tests/Signalynx.Tests.csproj -c "$CONFIGURATION" --no-build --no-restore -m:1 -nr:false --filter "FullyQualifiedName~DockerProviderIntegrationTests"
+
+      - name: Integration provider logs
+        if: failure()
+        run: docker compose -f docker-compose.integration.yml logs --no-color
+
+      - name: Stop integration providers
+        if: always()
+        run: docker compose -f docker-compose.integration.yml down --volumes --remove-orphans
+
+      - name: Install NativeAOT toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang zlib1g-dev binutils
+
+      - name: Publish NativeAOT sample
+        run: dotnet publish samples/Signalynx.Samples.NativeAot/Signalynx.Samples.NativeAot.csproj -c "$CONFIGURATION" -r linux-x64 --self-contained true -o artifacts/nativeaot
+
+      - name: Run NativeAOT sample
+        run: artifacts/nativeaot/Signalynx.Samples.NativeAot
+
+  pack:
+    name: Pack NuGet packages
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Resolve package version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="0.0.0-ci.${GITHUB_RUN_NUMBER}"
+          fi
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "Packing version ${version}"
+
+      - name: Pack source projects
+        shell: bash
+        run: |
+          mkdir -p artifacts/packages
+
+          for project in src/*/*.csproj; do
+            dotnet pack "$project" \
+              -c "$CONFIGURATION" \
+              -o artifacts/packages \
+              -p:Version="${{ steps.version.outputs.version }}"
+          done
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: signalynx-packages-${{ steps.version.outputs.version }}
+          path: artifacts/packages/*.nupkg
+          if-no-files-found: error
+
+  publish:
+    name: Publish NuGet packages and GitHub release
+    runs-on: ubuntu-latest
+    needs: pack
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: signalynx-packages-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Validate NuGet API key
+        shell: bash
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [[ -z "${NUGET_API_KEY}" ]]; then
+            echo "NUGET_API_KEY repository secret is required to publish packages."
+            exit 1
+          fi
+
+      - name: Publish packages to nuget.org
+        shell: bash
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          for package in artifacts/*.nupkg; do
+            dotnet nuget push "$package" \
+              --api-key "$NUGET_API_KEY" \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          done
+
+      - name: Write release notes
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+
+          cat > release-notes.md <<EOF
+          Signalynx ${version} publishes the current stable package set to NuGet.org.
+
+          ## NuGet Packages
+
+          - [Signalynx.Abstractions](https://www.nuget.org/packages/Signalynx.Abstractions)
+          - [Signalynx.Core](https://www.nuget.org/packages/Signalynx.Core)
+          - [Signalynx.DependencyInjection](https://www.nuget.org/packages/Signalynx.DependencyInjection)
+          - [Signalynx.Logging](https://www.nuget.org/packages/Signalynx.Logging)
+          - [Signalynx.Messaging](https://www.nuget.org/packages/Signalynx.Messaging)
+          - [Signalynx.SourceGeneration](https://www.nuget.org/packages/Signalynx.SourceGeneration)
+          - [Signalynx.Stores.PostgreSql](https://www.nuget.org/packages/Signalynx.Stores.PostgreSql)
+          - [Signalynx.Stores.SqlServer](https://www.nuget.org/packages/Signalynx.Stores.SqlServer)
+          - [Signalynx.Transports.AmazonSqs](https://www.nuget.org/packages/Signalynx.Transports.AmazonSqs)
+          - [Signalynx.Transports.AzureServiceBus](https://www.nuget.org/packages/Signalynx.Transports.AzureServiceBus)
+          - [Signalynx.Transports.InMemory](https://www.nuget.org/packages/Signalynx.Transports.InMemory)
+          - [Signalynx.Transports.Kafka](https://www.nuget.org/packages/Signalynx.Transports.Kafka)
+          - [Signalynx.Transports.RabbitMQ](https://www.nuget.org/packages/Signalynx.Transports.RabbitMQ)
+          - [Signalynx.Validation](https://www.nuget.org/packages/Signalynx.Validation)
+          EOF
+
+      - name: Create or update GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" \
+              --title "Signalynx ${tag}" \
+              --notes-file release-notes.md
+            gh release upload "$tag" artifacts/*.nupkg --clobber
+          else
+            gh release create "$tag" artifacts/*.nupkg \
+              --title "Signalynx ${tag}" \
+              --notes-file release-notes.md \
+              --verify-tag
+          fi
