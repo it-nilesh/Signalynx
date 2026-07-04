@@ -1,0 +1,217 @@
+# Signalynx.Messaging
+
+class Signalynx.Messaging.DeadLetterMessage
+  ctor Signalynx.Messaging.MessageEnvelope Envelope, System.Int32 Attempt, System.String Error, System.DateTimeOffset FailedAt, System.String Source
+  property System.Int32 Attempt { get; set; }
+  property Signalynx.Messaging.MessageEnvelope Envelope { get; set; }
+  property System.String Error { get; set; }
+  property System.DateTimeOffset FailedAt { get; set; }
+  property System.String Source { get; set; }
+  method Signalynx.Messaging.DeadLetterMessage <Clone>$()
+  method System.Void Deconstruct(Signalynx.Messaging.MessageEnvelope& Envelope, System.Int32& Attempt, System.String& Error, System.DateTimeOffset& FailedAt, System.String& Source)
+  method System.Boolean Equals(Signalynx.Messaging.DeadLetterMessage other)
+  method System.Boolean Equals(System.Object obj)
+  method System.Int32 GetHashCode()
+  method System.String ToString()
+
+class Signalynx.Messaging.ExponentialBackoffRetryPolicy
+  ctor Signalynx.Messaging.SignalynxMessagingOptions options
+  method System.Boolean ShouldRetry(System.Int32 attempt, System.Exception exception, System.TimeSpan& delay)
+
+interface Signalynx.Messaging.IBatchDeadLetterStore
+  method System.Threading.Tasks.ValueTask AddBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.DeadLetterMessage> messages, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RemoveBatchAsync(System.Collections.Generic.IReadOnlyList<System.Guid> messageIds, System.Threading.CancellationToken cancellationToken)
+
+interface Signalynx.Messaging.IBatchInboxStore
+  method System.Threading.Tasks.ValueTask CompleteBatchAsync(System.Collections.Generic.IReadOnlyList<System.Guid> messageIds, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask FailBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.InboxFailure> messages, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<System.Guid>> TryStartBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.InboxStart> messages, System.Threading.CancellationToken cancellationToken)
+
+interface Signalynx.Messaging.IBatchOutboxStore
+  method System.Threading.Tasks.ValueTask EnqueueBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.OutboxMessage> messages, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask MarkDeliveredBatchAsync(System.Collections.Generic.IReadOnlyList<System.Guid> messageIds, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask MoveToDeadLetterBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.OutboxDeadLetter> messages, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RescheduleBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.OutboxReschedule> messages, System.Threading.CancellationToken cancellationToken)
+
+interface Signalynx.Messaging.IDeadLetterStore
+  method System.Threading.Tasks.ValueTask AddAsync(Signalynx.Messaging.DeadLetterMessage message, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.DeadLetterMessage>> GetAsync(System.Int32 maxCount, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RemoveAsync(System.Guid messageId, System.Threading.CancellationToken cancellationToken)
+
+interface Signalynx.Messaging.IInboxStore
+  method System.Threading.Tasks.ValueTask CompleteAsync(System.Guid messageId, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask FailAsync(System.Guid messageId, System.String error, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<System.Boolean> TryStartAsync(System.Guid messageId, System.DateTimeOffset receivedAt, System.Threading.CancellationToken cancellationToken)
+
+interface Signalynx.Messaging.IMessageHandler<TMessage>
+  method System.Threading.Tasks.ValueTask HandleAsync(TMessage message, Signalynx.Messaging.MessageContext context)
+
+interface Signalynx.Messaging.IMessageOperations
+  method System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.DeadLetterMessage>> GetDeadLettersAsync(System.Int32 maxCount = default, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask ReplayDeadLetterAsync(System.Guid messageId, System.Threading.CancellationToken cancellationToken = default)
+
+interface Signalynx.Messaging.IMessageSerializer
+  property System.String ContentType { get; }
+  method System.Object Deserialize(System.ReadOnlyMemory<System.Byte> body, System.Type messageType)
+  method System.Byte[] Serialize<TMessage>(TMessage message)
+
+interface Signalynx.Messaging.IMessageTransport
+  method System.Collections.Generic.IAsyncEnumerable<Signalynx.Messaging.TransportDelivery> ReceiveAsync(System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask SendAsync(Signalynx.Messaging.MessageEnvelope envelope, System.Threading.CancellationToken cancellationToken)
+
+interface Signalynx.Messaging.IOutboxStore
+  method System.Threading.Tasks.ValueTask EnqueueAsync(Signalynx.Messaging.OutboxMessage message, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.OutboxMessage>> LockDueAsync(System.Int32 maxCount, System.DateTimeOffset now, System.TimeSpan lockDuration, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask MarkDeliveredAsync(System.Guid messageId, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask MoveToDeadLetterAsync(System.Guid messageId, System.Int32 attempt, System.String error, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RescheduleAsync(System.Guid messageId, System.Int32 attempt, System.DateTimeOffset nextAttempt, System.String error, System.Threading.CancellationToken cancellationToken)
+
+interface Signalynx.Messaging.IRetryPolicy
+  method System.Boolean ShouldRetry(System.Int32 attempt, System.Exception exception, System.TimeSpan& delay)
+
+interface Signalynx.Messaging.ISignalynxMessageBus
+  method System.Threading.Tasks.ValueTask<System.Guid> EnqueueAsync<TMessage>(TMessage message, System.String destination = default, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> headers = default, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask<System.Guid> ScheduleAsync<TMessage>(TMessage message, System.DateTimeOffset deliverAt, System.String destination = default, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> headers = default, System.Threading.CancellationToken cancellationToken = default)
+
+class Signalynx.Messaging.InboxFailure
+  ctor System.Guid MessageId, System.String Error
+  property System.String Error { get; set; }
+  property System.Guid MessageId { get; set; }
+  method Signalynx.Messaging.InboxFailure <Clone>$()
+  method System.Void Deconstruct(System.Guid& MessageId, System.String& Error)
+  method System.Boolean Equals(Signalynx.Messaging.InboxFailure other)
+  method System.Boolean Equals(System.Object obj)
+  method System.Int32 GetHashCode()
+  method System.String ToString()
+
+class Signalynx.Messaging.InboxStart
+  ctor System.Guid MessageId, System.DateTimeOffset ReceivedAt
+  property System.Guid MessageId { get; set; }
+  property System.DateTimeOffset ReceivedAt { get; set; }
+  method Signalynx.Messaging.InboxStart <Clone>$()
+  method System.Void Deconstruct(System.Guid& MessageId, System.DateTimeOffset& ReceivedAt)
+  method System.Boolean Equals(Signalynx.Messaging.InboxStart other)
+  method System.Boolean Equals(System.Object obj)
+  method System.Int32 GetHashCode()
+  method System.String ToString()
+
+class Signalynx.Messaging.MessageContext
+  ctor Signalynx.Messaging.MessageEnvelope Envelope, System.Int32 Attempt, System.Threading.CancellationToken CancellationToken
+  property System.Int32 Attempt { get; set; }
+  property System.Threading.CancellationToken CancellationToken { get; set; }
+  property Signalynx.Messaging.MessageEnvelope Envelope { get; set; }
+  property System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Headers { get; }
+  property System.Guid MessageId { get; }
+  method Signalynx.Messaging.MessageContext <Clone>$()
+  method System.Void Deconstruct(Signalynx.Messaging.MessageEnvelope& Envelope, System.Int32& Attempt, System.Threading.CancellationToken& CancellationToken)
+  method System.Boolean Equals(Signalynx.Messaging.MessageContext other)
+  method System.Boolean Equals(System.Object obj)
+  method System.Int32 GetHashCode()
+  method System.String ToString()
+
+class Signalynx.Messaging.MessageEnvelope
+  ctor System.Guid Id, System.String MessageType, System.String Destination, System.String ContentType, System.ReadOnlyMemory<System.Byte> Body, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Headers, System.DateTimeOffset CreatedAt, System.Nullable<System.DateTimeOffset> DeliverAt, System.Nullable<System.Guid> CorrelationId = default, System.Nullable<System.Guid> CausationId = default
+  property System.ReadOnlyMemory<System.Byte> Body { get; set; }
+  property System.Nullable<System.Guid> CausationId { get; set; }
+  property System.String ContentType { get; set; }
+  property System.Nullable<System.Guid> CorrelationId { get; set; }
+  property System.DateTimeOffset CreatedAt { get; set; }
+  property System.Nullable<System.DateTimeOffset> DeliverAt { get; set; }
+  property System.String Destination { get; set; }
+  property System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Headers { get; set; }
+  property System.Guid Id { get; set; }
+  property System.String MessageType { get; set; }
+  method Signalynx.Messaging.MessageEnvelope <Clone>$()
+  method System.Void Deconstruct(System.Guid& Id, System.String& MessageType, System.String& Destination, System.String& ContentType, System.ReadOnlyMemory`1[[System.Byte, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]& Body, System.Collections.Generic.IReadOnlyDictionary`2[[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]& Headers, System.DateTimeOffset& CreatedAt, System.Nullable`1[[System.DateTimeOffset, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]& DeliverAt, System.Nullable`1[[System.Guid, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]& CorrelationId, System.Nullable`1[[System.Guid, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]& CausationId)
+  method System.Boolean Equals(Signalynx.Messaging.MessageEnvelope other)
+  method System.Boolean Equals(System.Object obj)
+  method System.Int32 GetHashCode()
+  method System.String ToString()
+
+class Signalynx.Messaging.MessageOperations
+  ctor Signalynx.Messaging.IDeadLetterStore deadLetters, Signalynx.Messaging.IOutboxStore outbox, System.TimeProvider timeProvider
+  method System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.DeadLetterMessage>> GetDeadLettersAsync(System.Int32 maxCount = default, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask ReplayDeadLetterAsync(System.Guid messageId, System.Threading.CancellationToken cancellationToken = default)
+
+class Signalynx.Messaging.OutboxDeadLetter
+  ctor System.Guid MessageId, System.Int32 Attempt, System.String Error
+  property System.Int32 Attempt { get; set; }
+  property System.String Error { get; set; }
+  property System.Guid MessageId { get; set; }
+  method Signalynx.Messaging.OutboxDeadLetter <Clone>$()
+  method System.Void Deconstruct(System.Guid& MessageId, System.Int32& Attempt, System.String& Error)
+  method System.Boolean Equals(Signalynx.Messaging.OutboxDeadLetter other)
+  method System.Boolean Equals(System.Object obj)
+  method System.Int32 GetHashCode()
+  method System.String ToString()
+
+class Signalynx.Messaging.OutboxMessage
+  ctor Signalynx.Messaging.MessageEnvelope Envelope, System.Int32 Attempt, System.DateTimeOffset NextAttempt, System.Nullable<System.DateTimeOffset> LockedUntil = default, System.String LastError = default
+  property System.Int32 Attempt { get; set; }
+  property Signalynx.Messaging.MessageEnvelope Envelope { get; set; }
+  property System.String LastError { get; set; }
+  property System.Nullable<System.DateTimeOffset> LockedUntil { get; set; }
+  property System.DateTimeOffset NextAttempt { get; set; }
+  method Signalynx.Messaging.OutboxMessage <Clone>$()
+  method System.Void Deconstruct(Signalynx.Messaging.MessageEnvelope& Envelope, System.Int32& Attempt, System.DateTimeOffset& NextAttempt, System.Nullable`1[[System.DateTimeOffset, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]& LockedUntil, System.String& LastError)
+  method System.Boolean Equals(Signalynx.Messaging.OutboxMessage other)
+  method System.Boolean Equals(System.Object obj)
+  method System.Int32 GetHashCode()
+  method System.String ToString()
+
+class Signalynx.Messaging.OutboxReschedule
+  ctor System.Guid MessageId, System.Int32 Attempt, System.DateTimeOffset NextAttempt, System.String Error
+  property System.Int32 Attempt { get; set; }
+  property System.String Error { get; set; }
+  property System.Guid MessageId { get; set; }
+  property System.DateTimeOffset NextAttempt { get; set; }
+  method Signalynx.Messaging.OutboxReschedule <Clone>$()
+  method System.Void Deconstruct(System.Guid& MessageId, System.Int32& Attempt, System.DateTimeOffset& NextAttempt, System.String& Error)
+  method System.Boolean Equals(Signalynx.Messaging.OutboxReschedule other)
+  method System.Boolean Equals(System.Object obj)
+  method System.Int32 GetHashCode()
+  method System.String ToString()
+
+static class Signalynx.Messaging.ServiceCollectionExtensions
+  method Microsoft.Extensions.DependencyInjection.IServiceCollection AddSignalynxMessageHandler<TMessage, THandler>(Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+  method Microsoft.Extensions.DependencyInjection.IServiceCollection AddSignalynxMessaging(Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Signalynx.Messaging.SignalynxMessagingOptions> configure = default)
+
+class Signalynx.Messaging.SignalynxMessageBus
+  ctor Signalynx.Messaging.IOutboxStore outbox, Signalynx.Messaging.IMessageSerializer serializer, System.TimeProvider timeProvider
+  method System.Threading.Tasks.ValueTask<System.Guid> EnqueueAsync<TMessage>(TMessage message, System.String destination = default, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> headers = default, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask<System.Guid> ScheduleAsync<TMessage>(TMessage message, System.DateTimeOffset deliverAt, System.String destination = default, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> headers = default, System.Threading.CancellationToken cancellationToken = default)
+
+static class Signalynx.Messaging.SignalynxMessagingDiagnostics
+
+class Signalynx.Messaging.SignalynxMessagingException
+  ctor System.String message
+  ctor System.String message, System.Exception innerException
+
+class Signalynx.Messaging.SignalynxMessagingOptions
+  ctor 
+  property System.TimeSpan BaseRetryDelay { get; set; }
+  property System.Boolean EnableOutboxWorker { get; set; }
+  property System.Boolean EnableReceiverWorker { get; set; }
+  property System.Int32 MaxDeliveryAttempts { get; set; }
+  property System.Int32 OutboxBatchSize { get; set; }
+  property System.TimeSpan OutboxLockDuration { get; set; }
+  property System.TimeSpan OutboxPollingInterval { get; set; }
+  method Signalynx.Messaging.SignalynxMessagingOptions RegisterMessage<TMessage>(System.String name = default)
+
+class Signalynx.Messaging.SystemTextJsonMessageSerializer
+  ctor System.Text.Json.JsonSerializerOptions options = default
+  property System.String ContentType { get; }
+  method System.Object Deserialize(System.ReadOnlyMemory<System.Byte> body, System.Type messageType)
+  method System.Byte[] Serialize<TMessage>(TMessage message)
+
+abstract class Signalynx.Messaging.TransportDelivery
+  property System.Int32 Attempt { get; }
+  property Signalynx.Messaging.MessageEnvelope Envelope { get; }
+  method System.Threading.Tasks.ValueTask CompleteAsync(System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask DeadLetterAsync(System.String error, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask RetryAsync(System.TimeSpan delay, System.Threading.CancellationToken cancellationToken = default)
+
+class Signalynx.Messaging.UnknownMessageTypeException
+  ctor System.String messageType
+  property System.String MessageType { get; }
+

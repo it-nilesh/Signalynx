@@ -1,0 +1,33 @@
+# Signalynx.Transports.RabbitMQ
+
+interface Signalynx.Messaging.RabbitMQ.IRabbitMqTransportClient
+  method System.Threading.Tasks.ValueTask AcknowledgeAsync(Signalynx.Messaging.RabbitMQ.RabbitMqTransportMessage message, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask DeadLetterAsync(Signalynx.Messaging.RabbitMQ.RabbitMqTransportMessage message, System.String error, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask PublishAsync(Signalynx.Messaging.MessageEnvelope envelope, System.String routingKey, System.Threading.CancellationToken cancellationToken)
+  method System.Collections.Generic.IAsyncEnumerable<Signalynx.Messaging.RabbitMQ.RabbitMqTransportMessage> ReceiveAsync(System.String queueName, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RequeueAsync(Signalynx.Messaging.RabbitMQ.RabbitMqTransportMessage message, System.TimeSpan delay, System.Threading.CancellationToken cancellationToken)
+
+class Signalynx.Messaging.RabbitMQ.RabbitMqMessageTransport
+  ctor Signalynx.Messaging.RabbitMQ.IRabbitMqTransportClient client, Signalynx.Messaging.RabbitMQ.RabbitMqTransportOptions options
+  method System.Collections.Generic.IAsyncEnumerable<Signalynx.Messaging.TransportDelivery> ReceiveAsync(System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask SendAsync(Signalynx.Messaging.MessageEnvelope envelope, System.Threading.CancellationToken cancellationToken)
+
+static class Signalynx.Messaging.RabbitMQ.RabbitMqServiceCollectionExtensions
+  method Microsoft.Extensions.DependencyInjection.IServiceCollection AddSignalynxRabbitMqTransport(Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Signalynx.Messaging.RabbitMQ.RabbitMqTransportOptions> configure = default)
+
+class Signalynx.Messaging.RabbitMQ.RabbitMqTransportMessage
+  ctor Signalynx.Messaging.MessageEnvelope Envelope, System.Int32 Attempt, System.Object NativeMessage = default
+  property System.Int32 Attempt { get; set; }
+  property Signalynx.Messaging.MessageEnvelope Envelope { get; set; }
+  property System.Object NativeMessage { get; set; }
+  method Signalynx.Messaging.RabbitMQ.RabbitMqTransportMessage <Clone>$()
+  method System.Void Deconstruct(Signalynx.Messaging.MessageEnvelope& Envelope, System.Int32& Attempt, System.Object& NativeMessage)
+  method System.Boolean Equals(Signalynx.Messaging.RabbitMQ.RabbitMqTransportMessage other)
+  method System.Boolean Equals(System.Object obj)
+  method System.Int32 GetHashCode()
+  method System.String ToString()
+
+class Signalynx.Messaging.RabbitMQ.RabbitMqTransportOptions
+  ctor 
+  property System.String QueueName { get; set; }
+

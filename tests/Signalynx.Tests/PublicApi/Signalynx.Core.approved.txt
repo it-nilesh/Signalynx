@@ -1,0 +1,99 @@
+# Signalynx.Core
+
+class Signalynx.BulkProcessingException
+  ctor System.Collections.Generic.IReadOnlyList<System.Exception> errors
+  property System.Collections.Generic.IReadOnlyList<System.Exception> Errors { get; }
+
+class Signalynx.DuplicateHandlerException
+  ctor System.Type serviceType, System.Collections.Generic.IReadOnlyList<System.Type> implementationTypes
+  property System.Collections.Generic.IReadOnlyList<System.Type> ImplementationTypes { get; }
+  property System.Type ServiceType { get; }
+
+class Signalynx.EventPublisher
+  ctor System.IServiceProvider services, Signalynx.SignalynxOptions options
+  method System.Threading.Tasks.ValueTask PublishAsync<TEvent>(TEvent domainEvent, System.Threading.CancellationToken cancellationToken)
+
+class Signalynx.HandlerDescriptor
+  ctor System.Type ServiceType, System.Type ImplementationType, System.Boolean AllowsMultiple
+  property System.Boolean AllowsMultiple { get; set; }
+  property System.Type ImplementationType { get; set; }
+  property System.Type ServiceType { get; set; }
+  method Signalynx.HandlerDescriptor <Clone>$()
+  method System.Void Deconstruct(System.Type& ServiceType, System.Type& ImplementationType, System.Boolean& AllowsMultiple)
+  method System.Boolean Equals(Signalynx.HandlerDescriptor other)
+  method System.Boolean Equals(System.Object obj)
+  method System.Int32 GetHashCode()
+  method System.String ToString()
+
+class Signalynx.HandlerNotFoundException
+  ctor System.Type messageType, System.Type handlerType
+  property System.Type HandlerType { get; }
+  property System.Type MessageType { get; }
+
+class Signalynx.HandlerRegistry
+  ctor System.Collections.Generic.IEnumerable<Signalynx.HandlerDescriptor> descriptors
+  property Signalynx.HandlerRegistry Empty { get; }
+  method System.Boolean Contains(System.Type serviceType)
+  method System.ReadOnlySpan<Signalynx.HandlerDescriptor> GetHandlers(System.Type serviceType)
+
+class Signalynx.NotificationPublisher
+  ctor System.IServiceProvider services, Signalynx.SignalynxOptions options
+  method System.Threading.Tasks.ValueTask PublishAsync<TNotification>(TNotification notification, System.Threading.CancellationToken cancellationToken)
+
+class Signalynx.PipelineExecutor
+  ctor 
+  method System.Threading.Tasks.ValueTask<TResult> ExecuteAsync<TRequest, TResult, TState>(TRequest request, System.Collections.Generic.IReadOnlyList<Signalynx.IPipelineBehavior<TRequest, TResult>> behaviors, TState state, System.Func<TState, System.Threading.Tasks.ValueTask<TResult>> handler, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<TResult> ExecuteAsync<TRequest, TResult>(TRequest request, System.Collections.Generic.IReadOnlyList<Signalynx.IPipelineBehavior<TRequest, TResult>> behaviors, Signalynx.RequestHandlerDelegate<TResult> handler, System.Threading.CancellationToken cancellationToken)
+
+enum Signalynx.SignalynxBulkExceptionStrategy
+
+class Signalynx.SignalynxBulkOptions
+  ctor 
+  property System.Int32 BatchSize { get; set; }
+  property Signalynx.SignalynxBulkExceptionStrategy ExceptionStrategy { get; set; }
+  property System.Int32 MaxDegreeOfParallelism { get; set; }
+
+class Signalynx.SignalynxBulkProcessor
+  ctor Signalynx.SignalynxBulkOptions options
+  method System.Threading.Tasks.ValueTask ProcessAsync<TSource>(System.Collections.Generic.IReadOnlyList<TSource> source, System.Func<TSource, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask> processor, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask ProcessParallelAsync<TSource>(System.Collections.Generic.IReadOnlyList<TSource> source, System.Func<TSource, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask> processor, System.Int32 maxDegreeOfParallelism, System.Threading.CancellationToken cancellationToken = default)
+
+static class Signalynx.SignalynxDiagnostics
+
+class Signalynx.SignalynxDispatcher
+  ctor System.IServiceProvider services, Signalynx.PipelineExecutor pipelines, Signalynx.SignalynxOptions options
+  method System.Threading.Tasks.ValueTask DispatchAsync<TCommand>(TCommand command, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<TResult> DispatchAsync<TCommand, TResult>(TCommand command, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<TResult> QueryAsync<TQuery, TResult>(TQuery query, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<TResult> RequestAsync<TRequest, TResult>(TRequest request, System.Threading.CancellationToken cancellationToken)
+
+class Signalynx.SignalynxException
+  ctor System.String message
+  ctor System.String message, System.Exception innerException
+
+class Signalynx.SignalynxMediator
+  ctor Signalynx.SignalynxDispatcher dispatcher, Signalynx.NotificationPublisher notifications, Signalynx.EventPublisher events
+  method System.Threading.Tasks.ValueTask DispatchAsync<TCommand>(TCommand command, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask<TResult> DispatchAsync<TCommand, TResult>(TCommand command, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask PublishAsync<TNotification>(TNotification notification, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask PublishEventAsync<TEvent>(TEvent domainEvent, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask<TResult> QueryAsync<TQuery, TResult>(TQuery query, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask<TResult> RequestAsync<TRequest, TResult>(TRequest request, System.Threading.CancellationToken cancellationToken = default)
+
+class Signalynx.SignalynxOptions
+  ctor 
+  property System.Collections.Generic.List<System.Reflection.Assembly> Assemblies { get; }
+  property System.Boolean EnableDelegateCaching { get; set; }
+  property System.Boolean EnableDiagnostics { get; set; }
+  property Signalynx.SignalynxPublishStrategy EventPublishStrategy { get; set; }
+  property Signalynx.SignalynxPublishStrategy NotificationPublishStrategy { get; set; }
+  property System.Collections.Generic.List<System.Type> OpenPipelineBehaviors { get; }
+  property System.Collections.Generic.List<System.Type> PipelineBehaviors { get; }
+  property System.Boolean ValidateHandlersOnStartup { get; set; }
+  method Signalynx.SignalynxOptions AddBehavior<TBehavior>()
+  method Signalynx.SignalynxOptions AddOpenBehavior(System.Type behaviorType)
+  method Signalynx.SignalynxOptions RegisterServicesFromAssemblies(System.Reflection.Assembly[] assemblies)
+  method Signalynx.SignalynxOptions RegisterServicesFromAssembly(System.Reflection.Assembly assembly)
+
+enum Signalynx.SignalynxPublishStrategy
+
