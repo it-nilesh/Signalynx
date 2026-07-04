@@ -8,12 +8,20 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="Confluent.Kafka" />
+    <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="RabbitMQ.Client" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Signalynx.Abstractions/Signalynx.Abstractions.csproj" />
     <ProjectReference Include="../../src/Signalynx.Core/Signalynx.Core.csproj" />
     <ProjectReference Include="../../src/Signalynx.DependencyInjection/Signalynx.DependencyInjection.csproj" />
     <ProjectReference Include="../../src/Signalynx.Messaging/Signalynx.Messaging.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Stores.PostgreSql/Signalynx.Stores.PostgreSql.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Stores.SqlServer/Signalynx.Stores.SqlServer.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Transports.Kafka/Signalynx.Transports.Kafka.csproj" />
+    <ProjectReference Include="../../src/Signalynx.Transports.RabbitMQ/Signalynx.Transports.RabbitMQ.csproj" />
   </ItemGroup>
 </Project>

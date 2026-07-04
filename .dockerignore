@@ -1,0 +1,13 @@
+.git
+.agents
+.codex
+**/bin/
+**/obj/
+**/BenchmarkDotNet.Artifacts/
+artifacts/
+coverage/
+TestResults/
+*.user
+*.suo
+*.nupkg
+*.snupkg

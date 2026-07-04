@@ -1,0 +1,33 @@
+# Signalynx.Transports.Kafka
+
+interface Signalynx.Messaging.Kafka.IKafkaTransportClient
+  method System.Threading.Tasks.ValueTask CommitAsync(Signalynx.Messaging.Kafka.KafkaTransportMessage message, System.Threading.CancellationToken cancellationToken)
+  method System.Collections.Generic.IAsyncEnumerable<Signalynx.Messaging.Kafka.KafkaTransportMessage> ConsumeAsync(System.String topic, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask DeadLetterAsync(Signalynx.Messaging.Kafka.KafkaTransportMessage message, System.String error, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask ProduceAsync(Signalynx.Messaging.MessageEnvelope envelope, System.String topic, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RetryAsync(Signalynx.Messaging.Kafka.KafkaTransportMessage message, System.TimeSpan delay, System.Threading.CancellationToken cancellationToken)
+
+class Signalynx.Messaging.Kafka.KafkaMessageTransport
+  ctor Signalynx.Messaging.Kafka.IKafkaTransportClient client, Signalynx.Messaging.Kafka.KafkaTransportOptions options
+  method System.Collections.Generic.IAsyncEnumerable<Signalynx.Messaging.TransportDelivery> ReceiveAsync(System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask SendAsync(Signalynx.Messaging.MessageEnvelope envelope, System.Threading.CancellationToken cancellationToken)
+
+static class Signalynx.Messaging.Kafka.KafkaServiceCollectionExtensions
+  method Microsoft.Extensions.DependencyInjection.IServiceCollection AddSignalynxKafkaTransport(Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Signalynx.Messaging.Kafka.KafkaTransportOptions> configure = default)
+
+class Signalynx.Messaging.Kafka.KafkaTransportMessage
+  ctor Signalynx.Messaging.MessageEnvelope Envelope, System.Int32 Attempt, System.Object NativeMessage = default
+  property System.Int32 Attempt { get; set; }
+  property Signalynx.Messaging.MessageEnvelope Envelope { get; set; }
+  property System.Object NativeMessage { get; set; }
+  method Signalynx.Messaging.Kafka.KafkaTransportMessage <Clone>$()
+  method System.Void Deconstruct(Signalynx.Messaging.MessageEnvelope& Envelope, System.Int32& Attempt, System.Object& NativeMessage)
+  method System.Boolean Equals(Signalynx.Messaging.Kafka.KafkaTransportMessage other)
+  method System.Boolean Equals(System.Object obj)
+  method System.Int32 GetHashCode()
+  method System.String ToString()
+
+class Signalynx.Messaging.Kafka.KafkaTransportOptions
+  ctor 
+  property System.String Topic { get; set; }
+

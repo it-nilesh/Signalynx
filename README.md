@@ -594,6 +594,65 @@ dotnet pack src/Signalynx.Core -c Release
 
 BenchmarkDotNet scenarios include direct calls, cached delegates, reflection fallback, `ValueTask` dispatch, generated descriptor dispatch, one-million generated dispatch load tests, commands, queries, requests, notifications, events, diagnostics overhead, sequential/parallel publishing, one/three behavior pipelines, serialization, and enqueue cost. Dispatch, generated dispatch, pipeline, diagnostics, and messaging benchmarks emit allocation measurements; selected dispatch benchmarks also emit disassembly reports through BenchmarkDotNet. Always run benchmarks in Release mode without a debugger.
 
+### Docker provider load results
+
+The repository includes opt-in Docker-backed provider benchmarks for RabbitMQ,
+Kafka, PostgreSQL, and SQL Server. These were run on local Docker with .NET
+9.0.17 on Apple M5 Pro. Results vary by host, Docker resources, broker/database
+settings, message size, durability settings, and batching strategy.
+
+Raw provider write/read benchmarks use broker or database primitives directly:
+
+| Provider | Path | 10k tested time | Approx throughput | Projected 1M time |
+| --- | --- | ---: | ---: | ---: |
+| RabbitMQ | publish + push-consume, auto-ack | 103.420 ms | ~96,693 msg/s | ~10.3 s |
+| Kafka | batched produce + consume | 50.098 ms | ~199,609 msg/s | ~5.0 s |
+| PostgreSQL | insert rows + read rows | 1.247 s | ~8,019 rows/s | ~2 min 5 s |
+| SQL Server | insert rows + read rows | 2.723 s | ~3,673 rows/s | ~4 min 32 s |
+
+The RabbitMQ and Kafka rows are optimized raw broker benchmarks, not the full
+durable messaging pipeline. They intentionally exclude database outbox/inbox
+work, handler execution, retries, and JSON deserialization in the timed path.
+The PostgreSQL and SQL Server rows are primitive insert/read checks and are not
+bulk-loader or table-valued-parameter implementations.
+
+Run the broker/provider primitive benchmarks:
+
+```bash
+docker compose -f docker-compose.integration.yml up -d --wait
+
+SIGNALYNX_PROVIDER_LOAD_BENCHMARK=1 DOTNET_ROLL_FORWARD=Major \
+  dotnet run -c Release --no-build --project benchmarks/Signalynx.Performance \
+  -- --filter '*RabbitMqTransportLoadBenchmarks.PublishAndConsume*' --join \
+  --warmupCount 1 --iterationCount 1
+
+SIGNALYNX_PROVIDER_LOAD_BENCHMARK=1 DOTNET_ROLL_FORWARD=Major \
+  dotnet run -c Release --no-build --project benchmarks/Signalynx.Performance \
+  -- --filter '*KafkaTransportLoadBenchmarks.ProduceAndConsume*' --join \
+  --warmupCount 1 --iterationCount 1
+
+SIGNALYNX_PROVIDER_LOAD_BENCHMARK=1 DOTNET_ROLL_FORWARD=Major \
+  dotnet run -c Release --no-build --project benchmarks/Signalynx.Performance \
+  -- --filter '*PostgreSqlPrimitiveLoadBenchmarks.InsertAndRead*' --join \
+  --warmupCount 1 --iterationCount 1
+
+SIGNALYNX_PROVIDER_LOAD_BENCHMARK=1 DOTNET_ROLL_FORWARD=Major \
+  dotnet run -c Release --no-build --project benchmarks/Signalynx.Performance \
+  -- --filter '*SqlServerPrimitiveLoadBenchmarks.InsertAndRead*' --join \
+  --warmupCount 1 --iterationCount 1
+```
+
+The full provider-backed messaging benchmark covers transport, outbox, inbox,
+retry, and handler execution across RabbitMQ/PostgreSQL, RabbitMQ/SQL Server,
+Kafka/PostgreSQL, and Kafka/SQL Server:
+
+```bash
+SIGNALYNX_PROVIDER_LOAD_BENCHMARK=1 DOTNET_ROLL_FORWARD=Major \
+  dotnet run -c Release --no-build --project benchmarks/Signalynx.Performance \
+  -- --filter '*ProviderBackedMessagingLoadBenchmarks.TransportOutboxInboxRetryAndHandlerExecution*' \
+  --join --warmupCount 1 --iterationCount 1
+```
+
 ## Testing
 
 Create a `ServiceCollection`, call `AddSignalynx`, and resolve `ISignalynx`. Tests should assert handler results, behavior ordering, cancellation flow, publisher strategy, and expected exceptions. The repository uses xUnit.
@@ -624,14 +683,14 @@ Completed foundation:
 - Benchmark comparisons, allocation measurements, and generated dispatch load benchmarks
 - RabbitMQ, Azure Service Bus, Amazon SQS, and Kafka transport adapters
 - SQL Server and PostgreSQL durable inbox, outbox, and dead-letter store adapters
-
-Next milestones:
-
 - Docker-backed integration tests for RabbitMQ, Kafka, SQL Server, and PostgreSQL providers
 - End-to-end messaging load benchmark covering transport, outbox, inbox, retries, and handler execution
 - Provider implementation samples for official broker/database SDKs
 - Durable store concurrency validation for leases, duplicate delivery, retry races, and dead-letter replay
 - API compatibility checks and public API approval files
+
+Next milestones:
+
 - Source Link, signed packages, deterministic package validation, and release automation
 - .NET 10 target after the support baseline is adopted
 

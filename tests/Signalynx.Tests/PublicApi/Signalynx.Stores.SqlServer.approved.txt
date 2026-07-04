@@ -1,0 +1,57 @@
+# Signalynx.Stores.SqlServer
+
+interface Signalynx.Messaging.SqlServer.ISqlServerMessageStoreClient
+  method System.Threading.Tasks.ValueTask AddDeadLetterAsync(Signalynx.Messaging.DeadLetterMessage message, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask AddDeadLetterBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.DeadLetterMessage> messages, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask CompleteInboxAsync(System.Guid messageId, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask CompleteInboxBatchAsync(System.Collections.Generic.IReadOnlyList<System.Guid> messageIds, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask EnqueueOutboxAsync(Signalynx.Messaging.OutboxMessage message, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask EnqueueOutboxBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.OutboxMessage> messages, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask FailInboxAsync(System.Guid messageId, System.String error, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask FailInboxBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.InboxFailure> messages, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.DeadLetterMessage>> GetDeadLettersAsync(System.Int32 maxCount, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.OutboxMessage>> LockDueOutboxAsync(System.Int32 maxCount, System.DateTimeOffset now, System.TimeSpan lockDuration, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask MarkOutboxDeliveredAsync(System.Guid messageId, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask MarkOutboxDeliveredBatchAsync(System.Collections.Generic.IReadOnlyList<System.Guid> messageIds, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask MoveOutboxToDeadLetterAsync(System.Guid messageId, System.Int32 attempt, System.String error, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask MoveOutboxToDeadLetterBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.OutboxDeadLetter> messages, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RemoveDeadLetterAsync(System.Guid messageId, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RemoveDeadLetterBatchAsync(System.Collections.Generic.IReadOnlyList<System.Guid> messageIds, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RescheduleOutboxAsync(System.Guid messageId, System.Int32 attempt, System.DateTimeOffset nextAttempt, System.String error, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RescheduleOutboxBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.OutboxReschedule> messages, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<System.Boolean> TryStartInboxAsync(System.Guid messageId, System.DateTimeOffset receivedAt, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<System.Guid>> TryStartInboxBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.InboxStart> messages, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options, System.Threading.CancellationToken cancellationToken)
+
+class Signalynx.Messaging.SqlServer.SqlServerMessageStore
+  ctor Signalynx.Messaging.SqlServer.ISqlServerMessageStoreClient client, Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions options
+  method System.Threading.Tasks.ValueTask AddAsync(Signalynx.Messaging.DeadLetterMessage message, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask AddBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.DeadLetterMessage> messages, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask CompleteAsync(System.Guid messageId, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask CompleteBatchAsync(System.Collections.Generic.IReadOnlyList<System.Guid> messageIds, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask EnqueueAsync(Signalynx.Messaging.OutboxMessage message, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask EnqueueBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.OutboxMessage> messages, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask FailAsync(System.Guid messageId, System.String error, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask FailBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.InboxFailure> messages, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.DeadLetterMessage>> GetAsync(System.Int32 maxCount, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.OutboxMessage>> LockDueAsync(System.Int32 maxCount, System.DateTimeOffset now, System.TimeSpan lockDuration, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask MarkDeliveredAsync(System.Guid messageId, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask MarkDeliveredBatchAsync(System.Collections.Generic.IReadOnlyList<System.Guid> messageIds, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask MoveToDeadLetterAsync(System.Guid messageId, System.Int32 attempt, System.String error, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask MoveToDeadLetterBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.OutboxDeadLetter> messages, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RemoveAsync(System.Guid messageId, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RemoveBatchAsync(System.Collections.Generic.IReadOnlyList<System.Guid> messageIds, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RescheduleAsync(System.Guid messageId, System.Int32 attempt, System.DateTimeOffset nextAttempt, System.String error, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask RescheduleBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.OutboxReschedule> messages, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<System.Boolean> TryStartAsync(System.Guid messageId, System.DateTimeOffset receivedAt, System.Threading.CancellationToken cancellationToken)
+  method System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<System.Guid>> TryStartBatchAsync(System.Collections.Generic.IReadOnlyList<Signalynx.Messaging.InboxStart> messages, System.Threading.CancellationToken cancellationToken)
+
+class Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions
+  ctor 
+  property System.String DeadLetterTable { get; set; }
+  property System.String InboxTable { get; set; }
+  property System.String OutboxTable { get; set; }
+  property System.String Schema { get; set; }
+
+static class Signalynx.Messaging.SqlServer.SqlServerServiceCollectionExtensions
+  method Microsoft.Extensions.DependencyInjection.IServiceCollection AddSignalynxSqlServerStores(Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Signalynx.Messaging.SqlServer.SqlServerMessageStoreOptions> configure = default)
+

@@ -1,0 +1,53 @@
+# Signalynx.Abstractions
+
+interface Signalynx.ICommand
+
+interface Signalynx.ICommandHandler<TCommand>
+  method System.Threading.Tasks.ValueTask HandleAsync(TCommand command, System.Threading.CancellationToken cancellationToken = default)
+
+interface Signalynx.ICommandHandler<TCommand, TResult>
+  method System.Threading.Tasks.ValueTask<TResult> HandleAsync(TCommand command, System.Threading.CancellationToken cancellationToken = default)
+
+interface Signalynx.ICommand<TResult>
+
+interface Signalynx.IEvent
+
+interface Signalynx.IEventHandler<TEvent>
+  method System.Threading.Tasks.ValueTask HandleAsync(TEvent domainEvent, System.Threading.CancellationToken cancellationToken = default)
+
+interface Signalynx.INotification
+
+interface Signalynx.INotificationHandler<TNotification>
+  method System.Threading.Tasks.ValueTask HandleAsync(TNotification notification, System.Threading.CancellationToken cancellationToken = default)
+
+interface Signalynx.IPipelineBehavior<TRequest, TResult>
+  method System.Threading.Tasks.ValueTask<TResult> HandleAsync(TRequest request, Signalynx.RequestHandlerDelegate<TResult> next, System.Threading.CancellationToken cancellationToken = default)
+
+interface Signalynx.IQueryHandler<TQuery, TResult>
+  method System.Threading.Tasks.ValueTask<TResult> HandleAsync(TQuery query, System.Threading.CancellationToken cancellationToken = default)
+
+interface Signalynx.IQuery<TResult>
+
+interface Signalynx.IRequestHandler<TRequest, TResult>
+  method System.Threading.Tasks.ValueTask<TResult> HandleAsync(TRequest request, System.Threading.CancellationToken cancellationToken = default)
+
+interface Signalynx.IRequest<TResult>
+
+interface Signalynx.ISignalynx
+  method System.Threading.Tasks.ValueTask DispatchAsync<TCommand>(TCommand command, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask<TResult> DispatchAsync<TCommand, TResult>(TCommand command, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask PublishAsync<TNotification>(TNotification notification, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask PublishEventAsync<TEvent>(TEvent domainEvent, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask<TResult> QueryAsync<TQuery, TResult>(TQuery query, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask<TResult> RequestAsync<TRequest, TResult>(TRequest request, System.Threading.CancellationToken cancellationToken = default)
+
+interface Signalynx.ISignalynxBulkProcessor
+  method System.Threading.Tasks.ValueTask ProcessAsync<TSource>(System.Collections.Generic.IReadOnlyList<TSource> source, System.Func<TSource, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask> processor, System.Threading.CancellationToken cancellationToken = default)
+  method System.Threading.Tasks.ValueTask ProcessParallelAsync<TSource>(System.Collections.Generic.IReadOnlyList<TSource> source, System.Func<TSource, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask> processor, System.Int32 maxDegreeOfParallelism, System.Threading.CancellationToken cancellationToken = default)
+
+class Signalynx.RequestHandlerDelegate<TResult>
+  ctor System.Object object, System.IntPtr method
+  method System.IAsyncResult BeginInvoke(System.AsyncCallback callback, System.Object object)
+  method System.Threading.Tasks.ValueTask<TResult> EndInvoke(System.IAsyncResult result)
+  method System.Threading.Tasks.ValueTask<TResult> Invoke()
+
