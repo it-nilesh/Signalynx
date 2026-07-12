@@ -138,7 +138,9 @@ jobs:
       - name: Verify release tag is on main
         shell: bash
         run: |
-          git fetch origin main --tags
+          # The triggering tag is already checked out. Fetch only main so an
+          # annotated tag is not rejected as an attempted local replacement.
+          git fetch origin main
 
           tag_commit="$(git rev-list -n 1 "$GITHUB_REF_NAME")"
           main_commit="$(git rev-parse origin/main)"
