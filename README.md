@@ -1,77 +1,115 @@
-# Signalynx
+# Signalynx: High-Performance .NET Mediator and Durable Messaging
 
 [![NuGet](https://img.shields.io/nuget/v/Signalynx.Core.svg)](https://www.nuget.org/packages/Signalynx.Core)
 [![NuGet downloads](https://img.shields.io/nuget/dt/Signalynx.Core.svg)](https://www.nuget.org/packages/Signalynx.Core)
 [![Website](https://img.shields.io/badge/website-signalynx.inilesh.dev-5de7ff)](https://signalynx.inilesh.dev/)
 
-**Website:** [signalynx.inilesh.dev](https://signalynx.inilesh.dev/) · **Source:** [github.com/it-nilesh/Signalynx](https://github.com/it-nilesh/Signalynx)
+**Website:** [signalynx.inilesh.dev](https://signalynx.inilesh.dev/) · **Source:** [github.com/it-nilesh/Signalynx](https://github.com/it-nilesh/Signalynx) · **License:** [MIT](LICENSE)
 
-Signalynx is a high-performance mediator, dispatcher, and lightweight in-process messaging abstraction for .NET 8, .NET 9, and .NET 10. It supports CQRS commands, queries, request/response messages, notifications, domain events, pipeline behaviors, and bulk processing through a small, strongly typed API.
+Signalynx is a high-performance, strongly typed **.NET mediator, CQRS dispatcher, and durable messaging toolkit** for .NET 8, .NET 9, and .NET 10. It supports commands, queries, request/response messages, notifications, domain events, pipeline behaviors, bulk processing, transactional inbox/outbox patterns, retries, scheduling, dead letters, and broker transports.
 
-Signalynx is built from scratch. It does not depend on ASP.NET Core or an external messaging framework.
+`Signalynx.Core` is the main runtime package. Optional packages add Microsoft dependency injection, FluentValidation, logging, source generation, durable stores, and RabbitMQ, Azure Service Bus, Amazon SQS, or Kafka transports.
 
-## Why another mediator?
+```bash
+dotnet add package Signalynx.Core
+```
 
-Mediator overhead should not dominate inexpensive handlers. Signalynx keeps dispatch typed, uses `ValueTask`, discovers handlers once during startup, avoids `MethodInfo.Invoke` on the hot path, and keeps optional integrations in separate packages.
+Signalynx is async-only, built from scratch, and does not require ASP.NET Core or an external messaging framework.
 
-The performance goal is low dispatch overhead—not a claim that real business logic can process millions of records in a millisecond. Handler code, I/O, persistence, and serialization remain the primary real-world costs.
+## Contents
 
-## Packages
+- [Why Signalynx?](#why-signalynx)
+- [Choose the right API](#choose-the-right-api)
+- [Installation](#installation)
+- [Package ecosystem](#package-ecosystem)
+- [Quick start](#quick-start)
+- [Durable messaging](#durable-messaging)
+- [Production readiness](#production-readiness-checklist)
+- [Build and test](#build-test-and-benchmark)
+
+## Why Signalynx?
+
+- **Strongly typed APIs:** commands, queries, requests, notifications, and domain events use explicit contracts.
+- **Low dispatch overhead:** handlers return `ValueTask`, discovery happens once at startup, and the hot path avoids `MethodInfo.Invoke`.
+- **Composable pipelines:** add validation, logging, authorization, metrics, or transactions without putting infrastructure in handlers.
+- **Optional infrastructure:** mediator dispatch remains independent from durable messaging, databases, and message brokers.
+- **NativeAOT support:** source-generated registration avoids runtime assembly scanning in trimmed applications.
+- **Production messaging:** add inbox/outbox delivery, retries, scheduling, deduplication, dead letters, and replay when a boundary requires them.
+
+Signalynx is designed to keep mediator overhead low. It does not claim that real business logic, database access, serialization, or network I/O becomes free; benchmark the complete workload for your application.
+
+## Choose the right API
+
+| Requirement | Signalynx API | Use it for |
+| --- | --- | --- |
+| One handler and an immediate result | `DispatchAsync`, `QueryAsync`, or `RequestAsync` | Commands, reads, and request/response work inside the current process |
+| Multiple local handlers | `PublishAsync` or `PublishEventAsync` | Notifications and domain events |
+| A large local workload | `ISignalynxBulkProcessor` | Bounded sequential or parallel processing without per-item mediator semantics |
+| Delay, retry, durability, or another service | `ISignalynxMessageBus` | Scheduled work, integration messages, and broker delivery |
+
+## Installation
+
+### Main runtime
+
+Install the main package when you want the mediator, publishers, handler registry, diagnostics, and bulk processor:
+
+```bash
+dotnet add package Signalynx.Core
+```
+
+### Microsoft dependency injection
+
+Install the DI integration when using `AddSignalynx(...)`. It includes `Signalynx.Core` and `Signalynx.Abstractions` transitively, so you do not need to install them separately:
+
+```bash
+dotnet add package Signalynx.DependencyInjection
+```
+
+Add only the optional packages required by your application. For example:
+
+```bash
+dotnet add package Signalynx.Validation
+dotnet add package Signalynx.Logging
+dotnet add package Signalynx.SourceGeneration
+dotnet add package Signalynx.Messaging
+```
+
+## Package ecosystem
+
+### Runtime and application integrations
 
 | Package | Purpose |
 | --- | --- |
-| [`Signalynx.Abstractions`](https://www.nuget.org/packages/Signalynx.Abstractions) | Messages, handlers, pipelines, and mediator contracts |
-| [`Signalynx.Core`](https://www.nuget.org/packages/Signalynx.Core) | In-process mediator, publishers, registry, and bulk processor |
-| [`Signalynx.DependencyInjection`](https://www.nuget.org/packages/Signalynx.DependencyInjection) | Assembly scanning and Microsoft DI registration |
-| [`Signalynx.Validation`](https://www.nuget.org/packages/Signalynx.Validation) | Optional FluentValidation behaviors |
-| [`Signalynx.Logging`](https://www.nuget.org/packages/Signalynx.Logging) | Optional Microsoft.Extensions.Logging behaviors |
-| [`Signalynx.SourceGeneration`](https://www.nuget.org/packages/Signalynx.SourceGeneration) | Optional compile-time handler registration |
-| [`Signalynx.Messaging`](https://www.nuget.org/packages/Signalynx.Messaging) | Durable messaging contracts, workers, retries, inbox/outbox, and operations |
-| [`Signalynx.Transports.InMemory`](https://www.nuget.org/packages/Signalynx.Transports.InMemory) | Development/test transport and non-persistent stores |
-| [`Signalynx.Stores.SqlServer`](https://www.nuget.org/packages/Signalynx.Stores.SqlServer) | SQL Server durable inbox, outbox, and dead-letter stores |
-| [`Signalynx.Stores.PostgreSql`](https://www.nuget.org/packages/Signalynx.Stores.PostgreSql) | PostgreSQL durable inbox, outbox, and dead-letter stores |
+| [`Signalynx.Core`](https://www.nuget.org/packages/Signalynx.Core) | **Main runtime package:** mediator dispatch, publishers, registry, diagnostics, and bulk processor |
+| [`Signalynx.Abstractions`](https://www.nuget.org/packages/Signalynx.Abstractions) | Dependency-free messages, handlers, pipelines, and mediator contracts |
+| [`Signalynx.DependencyInjection`](https://www.nuget.org/packages/Signalynx.DependencyInjection) | Microsoft DI registration and startup assembly scanning; includes Core transitively |
+| [`Signalynx.Validation`](https://www.nuget.org/packages/Signalynx.Validation) | Optional FluentValidation pipeline behavior |
+| [`Signalynx.Logging`](https://www.nuget.org/packages/Signalynx.Logging) | Optional Microsoft.Extensions.Logging pipeline behavior |
+| [`Signalynx.SourceGeneration`](https://www.nuget.org/packages/Signalynx.SourceGeneration) | Compile-time handler registration for trimming and NativeAOT |
+| [`Signalynx.Messaging`](https://www.nuget.org/packages/Signalynx.Messaging) | Durable messaging, workers, envelopes, retries, scheduling, inbox/outbox, and dead-letter operations |
+
+### Durable stores
+
+| Package | Purpose |
+| --- | --- |
+| [`Signalynx.Stores.SqlServer`](https://www.nuget.org/packages/Signalynx.Stores.SqlServer) | SQL Server inbox, outbox, and dead-letter stores |
+| [`Signalynx.Stores.PostgreSql`](https://www.nuget.org/packages/Signalynx.Stores.PostgreSql) | PostgreSQL inbox, outbox, and dead-letter stores |
+
+### Message transports
+
+| Package | Purpose |
+| --- | --- |
+| [`Signalynx.Transports.InMemory`](https://www.nuget.org/packages/Signalynx.Transports.InMemory) | Development/test transport and non-persistent stores; not for production durability |
 | [`Signalynx.Transports.RabbitMQ`](https://www.nuget.org/packages/Signalynx.Transports.RabbitMQ) | RabbitMQ transport adapter |
 | [`Signalynx.Transports.AzureServiceBus`](https://www.nuget.org/packages/Signalynx.Transports.AzureServiceBus) | Azure Service Bus transport adapter |
 | [`Signalynx.Transports.AmazonSqs`](https://www.nuget.org/packages/Signalynx.Transports.AmazonSqs) | Amazon SQS transport adapter |
 | [`Signalynx.Transports.Kafka`](https://www.nuget.org/packages/Signalynx.Transports.Kafka) | Kafka transport adapter |
 
-## Installation
-
-When packages are published:
-
-```bash
-dotnet add package Signalynx.DependencyInjection
-dotnet add package Signalynx.Logging
-dotnet add package Signalynx.Validation
-dotnet add package Signalynx.Messaging
-dotnet add package Signalynx.Stores.SqlServer
-dotnet add package Signalynx.Stores.PostgreSql
-dotnet add package Signalynx.Transports.RabbitMQ
-dotnet add package Signalynx.Transports.AzureServiceBus
-dotnet add package Signalynx.Transports.AmazonSqs
-dotnet add package Signalynx.Transports.Kafka
-```
-
-For local development, reference the projects in `src/`.
-
-For production, keep API composition, application handlers, integration
-contracts, and infrastructure adapters in separate projects:
-
-```text
-src/
-  Orders.Api/              HTTP endpoints and composition root
-  Orders.Application/      Commands, queries, handlers, validators
-  Orders.Contracts/        Stable integration-message contracts
-  Orders.Infrastructure/   Database, transport, inbox/outbox providers
-```
-
-Use in-process dispatch when the caller needs an immediate result. Use durable
-messaging when work may be delayed, retried, processed by another service, or
-completed after the original request ends.
-
 ## Quick start
 
-Define a command and handler:
+This example uses Microsoft DI, so install `Signalynx.DependencyInjection`. The package includes the Core runtime automatically.
+
+### 1. Define a command and handler
 
 ```csharp
 public sealed record CreateOrderCommand(Guid CustomerId, decimal Amount)
@@ -87,18 +125,16 @@ public sealed class CreateOrderHandler
 }
 ```
 
-Register Signalynx:
+### 2. Register Signalynx
 
 ```csharp
 builder.Services.AddSignalynx(options =>
 {
     options.RegisterServicesFromAssembly(typeof(Program).Assembly);
-    options.AddOpenBehavior(typeof(LoggingBehavior<,>));
-    options.NotificationPublishStrategy = SignalynxPublishStrategy.Sequential;
 });
 ```
 
-Dispatch:
+### 3. Dispatch the command
 
 ```csharp
 var id = await signalynx.DispatchAsync<CreateOrderCommand, Guid>(
