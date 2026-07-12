@@ -595,6 +595,38 @@ dotnet publish samples/Signalynx.Samples.NativeAot -c Release -r linux-x64 --sel
 dotnet pack src/Signalynx.Core -c Release
 ```
 
+## Release automation
+
+GitHub Actions runs full validation for pull requests and pushes to `develop`
+and `main`: restore, build, unit tests, Docker-backed provider integration
+tests, and NativeAOT sample publish/run validation.
+
+Pushes to `develop` and `main` also generate package artifacts for inspection.
+NuGet publishing is intentionally limited to release tags so package versions
+cannot be accidentally burned during normal development.
+
+To publish a release:
+
+1. Add the repository secret `NUGET_API_KEY` with push permission for
+   `Signalynx.*` packages on nuget.org.
+2. Merge the finalized code into `main`.
+3. Create and push a tag such as `v1.0.3`.
+
+The tag workflow packs all source projects using the tag version, publishes the
+packages to nuget.org, and creates or updates the GitHub Release with package
+assets and NuGet links.
+
+Safety precautions:
+
+- Secrets are read only from GitHub Actions secrets and are never stored in the
+  repository.
+- Pull requests and normal branch pushes never receive NuGet publishing
+  credentials.
+- Publishing runs only in the canonical `it-nilesh/Signalynx` repository.
+- Release tags must point to commits already contained in `origin/main`.
+- Workflow concurrency prevents two runs for the same ref from publishing at the
+  same time.
+
 BenchmarkDotNet scenarios include direct calls, cached delegates, reflection fallback, `ValueTask` dispatch, generated descriptor dispatch, one-million generated dispatch load tests, commands, queries, requests, notifications, events, diagnostics overhead, sequential/parallel publishing, one/three behavior pipelines, serialization, and enqueue cost. Dispatch, generated dispatch, pipeline, diagnostics, and messaging benchmarks emit allocation measurements; selected dispatch benchmarks also emit disassembly reports through BenchmarkDotNet. Always run benchmarks in Release mode without a debugger.
 
 ### Docker provider load results
