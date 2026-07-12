@@ -13,6 +13,7 @@ export const site = {
   diInstall: 'dotnet add package Signalynx.DependencyInjection',
   nugetUrl: 'https://www.nuget.org/packages/Signalynx.Core',
   githubUrl: 'https://github.com/it-nilesh/Signalynx',
+  websiteUrl: 'https://signalynx.inilesh.dev/',
 }
 
 export const packageGroups: PackageGroup[] = [

@@ -2,12 +2,9 @@
 
 1. Confirm the `Signalynx` name and all intended NuGet package IDs are
    available. Availability is only guaranteed after NuGet accepts ownership.
-2. Set `RepositoryUrl` to the real public repository URL during packing:
-
-   ```bash
-   dotnet pack Signalynx.slnx -c Release \
-     -p:RepositoryUrl=https://github.com/OWNER/REPOSITORY
-   ```
+2. Confirm package metadata still points to the public project website
+   `https://signalynx.inilesh.dev/` and source repository
+   `https://github.com/it-nilesh/Signalynx`.
 
 3. Review `LICENSE`, `THIRD-PARTY-NOTICES.md`, dependency licenses, and
    copyright ownership.

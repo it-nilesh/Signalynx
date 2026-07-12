@@ -2,6 +2,9 @@
 
 [![NuGet](https://img.shields.io/nuget/v/Signalynx.Core.svg)](https://www.nuget.org/packages/Signalynx.Core)
 [![NuGet downloads](https://img.shields.io/nuget/dt/Signalynx.Core.svg)](https://www.nuget.org/packages/Signalynx.Core)
+[![Website](https://img.shields.io/badge/website-signalynx.inilesh.dev-5de7ff)](https://signalynx.inilesh.dev/)
+
+**Website:** [signalynx.inilesh.dev](https://signalynx.inilesh.dev/) · **Source:** [github.com/it-nilesh/Signalynx](https://github.com/it-nilesh/Signalynx)
 
 Signalynx is a high-performance mediator, dispatcher, and lightweight in-process messaging abstraction for .NET 8, .NET 9, and .NET 10. It supports CQRS commands, queries, request/response messages, notifications, domain events, pipeline behaviors, and bulk processing through a small, strongly typed API.
 
