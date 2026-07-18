@@ -1,0 +1,34 @@
+# Signalynx
+
+> Signalynx is an open-source, high-performance, strongly typed mediator, dispatcher, and durable messaging toolkit for .NET 8, .NET 9, and .NET 10.
+
+Signalynx separates immediate in-process application dispatch from durable work that must survive retries, restarts, delays, or service boundaries. The project is written in C#, distributed as NuGet packages, and licensed under the MIT License.
+
+## Official resources
+
+- [Signalynx website](https://signalynx.inilesh.dev/): Product overview, architecture guidance, package selection, and quick-start examples.
+- [GitHub repository](https://github.com/it-nilesh/Signalynx): Authoritative source code, README, samples, tests, and contribution information.
+- [Signalynx.Core on NuGet](https://www.nuget.org/packages/Signalynx.Core): Main mediator runtime package.
+- [Detailed AI reference](https://signalynx.inilesh.dev/llms-full.txt): Capabilities, packages, supported providers, and terminology.
+
+## Key facts
+
+- Signalynx supports commands, queries, requests, notifications, and domain events.
+- Local dispatch does not require a message broker or ASP.NET Core.
+- Durable messaging includes inbox and outbox processing, retries, scheduling, dead letters, and replay.
+- Optional persistent stores support SQL Server and PostgreSQL.
+- Optional transports support RabbitMQ, Azure Service Bus, Amazon SQS, and Kafka.
+- Source-generated registration supports trimmed and NativeAOT applications.
+- The in-memory transport and store are intended for development and tests, not production durability.
+
+## Installation
+
+```shell
+dotnet add package Signalynx.Core
+```
+
+For Microsoft dependency injection registration:
+
+```shell
+dotnet add package Signalynx.DependencyInjection
+```
