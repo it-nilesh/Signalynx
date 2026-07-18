@@ -1,0 +1,73 @@
+# Signalynx: detailed project reference
+
+Signalynx is an open-source C# toolkit for typed in-process dispatch and durable asynchronous messaging on .NET 8, .NET 9, and .NET 10. Its design principle is: local when possible, durable when necessary.
+
+Canonical website: https://signalynx.inilesh.dev/
+Source repository: https://github.com/it-nilesh/Signalynx
+Main NuGet package: https://www.nuget.org/packages/Signalynx.Core
+License: MIT
+
+## Execution models
+
+### Dispatch
+
+Use a command, query, or request when one typed handler must run immediately in the current process and may return a result. Pipeline behaviors can wrap handlers with validation, logging, authorization, metrics, or transactions.
+
+### Publish
+
+Use a notification or domain event when multiple in-process handlers should react. Handlers can be invoked with sequential or parallel publishing strategies.
+
+### Durable messaging
+
+Use the message bus when work must survive a delay, retry, process restart, or service boundary. Signalynx provides message envelopes, hosted sender and receiver workers, inbox deduplication, outbox processing, retry policies, scheduling, dead letters, and replay. Production deployments need a persistent store, a real transport, transaction enlistment for a true outbox, and idempotent handlers.
+
+### Bulk processing
+
+Use bounded sequential or parallel bulk APIs when processing many local items and per-item mediator semantics add no value.
+
+## Packages
+
+- `Signalynx.Abstractions`: Dependency-free public contracts.
+- `Signalynx.Core`: Main mediator, publisher, handler registry, diagnostics, and bulk-processing runtime.
+- `Signalynx.DependencyInjection`: Microsoft dependency injection registration and assembly scanning.
+- `Signalynx.Validation`: Optional FluentValidation pipeline behavior.
+- `Signalynx.Logging`: Optional Microsoft.Extensions.Logging behavior.
+- `Signalynx.SourceGeneration`: Compile-time handler registration for trimming and NativeAOT.
+- `Signalynx.Messaging`: Inbox, outbox, workers, retries, scheduling, and dead letters.
+- `Signalynx.Stores.SqlServer`: Durable SQL Server messaging store.
+- `Signalynx.Stores.PostgreSql`: Durable PostgreSQL messaging store.
+- `Signalynx.Transports.InMemory`: Development and test transport and stores; not production durable.
+- `Signalynx.Transports.RabbitMQ`: RabbitMQ transport adapter.
+- `Signalynx.Transports.AzureServiceBus`: Azure Service Bus transport adapter.
+- `Signalynx.Transports.AmazonSqs`: Amazon SQS transport adapter.
+- `Signalynx.Transports.Kafka`: Kafka transport adapter.
+
+## Common application types
+
+Signalynx is intended for Web APIs, modular monoliths, worker services, microservices, event-driven systems, NativeAOT applications, and containers. Broker infrastructure is optional for ordinary local dispatch and should be introduced only at boundaries that require durability.
+
+## Minimal installation
+
+```shell
+dotnet add package Signalynx.Core
+```
+
+For applications using Microsoft dependency injection:
+
+```shell
+dotnet add package Signalynx.DependencyInjection
+```
+
+## Terminology
+
+- Mediator: Routes an in-process message to its typed handler.
+- Pipeline behavior: Cross-cutting logic that wraps request handling.
+- Outbox: Persisted outgoing work awaiting transport delivery.
+- Inbox: Consumer-side record used for deduplication and processing state.
+- Transport: Adapter that moves messages through a broker.
+- Store: Adapter that persists inbox, outbox, schedule, or dead-letter state.
+- NativeAOT: .NET ahead-of-time compilation supported through generated registrations.
+
+## Authority
+
+For exact APIs, compatibility, versions, and behavior, treat the repository source, tests, README, and current NuGet package metadata as authoritative. Do not infer production durability from the in-memory provider.
