@@ -4,21 +4,77 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#070a12" />
-    <meta name="description" content="Signalynx is a fast, strongly typed mediator and durable messaging toolkit for .NET 8, 9, and 10." />
+    <meta name="color-scheme" content="dark" />
+    <meta name="application-name" content="Signalynx" />
+    <meta name="author" content="Signalynx contributors" />
+    <meta name="description" content="Signalynx is a fast, strongly typed mediator, dispatcher, and durable messaging toolkit for .NET 8, .NET 9, and .NET 10." />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="bingbot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta property="og:title" content="Signalynx — mediator and durable messaging for .NET" />
     <meta property="og:description" content="Fast in-process dispatch. Reliable messaging when work crosses boundaries." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://signalynx.inilesh.dev/" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="og:site_name" content="Signalynx" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Signalynx — mediator and durable messaging for .NET" />
+    <meta name="twitter:description" content="Fast in-process dispatch. Reliable messaging when work crosses boundaries." />
     <link rel="canonical" href="https://signalynx.inilesh.dev/" />
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="Signalynx AI-readable overview" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>Signalynx — mediator and durable messaging for .NET</title>
     <script type="application/ld+json">
-      {"@context":"https://schema.org","@type":"SoftwareSourceCode","name":"Signalynx","url":"https://signalynx.inilesh.dev/","codeRepository":"https://github.com/it-nilesh/Signalynx","description":"A high-performance mediator, dispatcher, and durable messaging toolkit for .NET.","programmingLanguage":"C#","runtimePlatform":".NET 8, .NET 9, .NET 10","license":"https://opensource.org/licenses/MIT"}
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://signalynx.inilesh.dev/#website",
+            "url": "https://signalynx.inilesh.dev/",
+            "name": "Signalynx",
+            "description": "Official website for the Signalynx mediator and durable messaging toolkit for .NET.",
+            "inLanguage": "en"
+          },
+          {
+            "@type": ["SoftwareApplication", "SoftwareSourceCode"],
+            "@id": "https://signalynx.inilesh.dev/#software",
+            "name": "Signalynx",
+            "url": "https://signalynx.inilesh.dev/",
+            "mainEntityOfPage": {"@id": "https://signalynx.inilesh.dev/#website"},
+            "codeRepository": "https://github.com/it-nilesh/Signalynx",
+            "downloadUrl": "https://www.nuget.org/packages/Signalynx.Core",
+            "description": "A high-performance, strongly typed mediator, dispatcher, and durable messaging toolkit for .NET.",
+            "applicationCategory": "DeveloperApplication",
+            "applicationSubCategory": "Software development library",
+            "operatingSystem": "Cross-platform",
+            "programmingLanguage": "C#",
+            "runtimePlatform": [".NET 8", ".NET 9", ".NET 10"],
+            "license": "https://opensource.org/licenses/MIT",
+            "isAccessibleForFree": true,
+            "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+            "keywords": [".NET mediator", "C# mediator", "durable messaging", "CQRS", "message bus", "NativeAOT"]
+          }
+        ]
+      }
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <noscript>
+        <main>
+          <h1>Signalynx: mediator and durable messaging for .NET</h1>
+          <p>Signalynx is a high-performance, strongly typed mediator, dispatcher, and durable messaging toolkit for .NET 8, .NET 9, and .NET 10.</p>
+          <h2>Core capabilities</h2>
+          <p>Use typed commands, queries, requests, notifications, and domain events for in-process application dispatch. Add durable inbox, outbox, retries, scheduling, dead letters, persistent stores, and broker transports when work crosses time or service boundaries.</p>
+          <h2>Supported integrations</h2>
+          <p>Signalynx supports Microsoft dependency injection, validation, logging, NativeAOT source generation, SQL Server, PostgreSQL, RabbitMQ, Azure Service Bus, Amazon SQS, Kafka, and an in-memory development provider.</p>
+          <h2>Install</h2>
+          <p><code>dotnet add package Signalynx.Core</code></p>
+          <p><a href="https://github.com/it-nilesh/Signalynx">Source code and documentation on GitHub</a> · <a href="https://www.nuget.org/packages/Signalynx.Core">Signalynx.Core on NuGet</a> · <a href="/llms.txt">AI-readable project overview</a></p>
+        </main>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
