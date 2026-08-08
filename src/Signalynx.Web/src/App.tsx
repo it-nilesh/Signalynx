@@ -45,7 +45,7 @@ const appArchitectures = [
     title: 'Web APIs and modular monoliths',
     label: 'IN-PROCESS APPLICATIONS',
     text: 'Dispatch commands and queries to application handlers. Use notifications and domain events when several local modules need to react.',
-    packages: ['Core', 'DependencyInjection', 'Validation'],
+    packages: ['DependencyInjection', 'Validation'],
     flow: ['Endpoint', 'Dispatch', 'Handler'],
   },
   {
@@ -61,7 +61,7 @@ const appArchitectures = [
     title: 'Microservices and event-driven systems',
     label: 'SERVICE BOUNDARIES',
     text: 'Use local dispatch inside each service and durable integration messages across services, retries, delays, and broker boundaries.',
-    packages: ['Core', 'Messaging', 'Transport'],
+    packages: ['DependencyInjection', 'Messaging', 'Transport'],
     flow: ['Service A', 'Broker', 'Service B'],
   },
   {
@@ -97,7 +97,7 @@ function App() {
             <p className="hero-lead">{site.description}</p>
             <div className="badges"><span>.NET 8 · 9 · 10</span><span>MIT</span><span>Async only</span></div>
             <div className="hero-actions"><a className="button" href="#quick-start">Get started <span>→</span></a><a className="button button--ghost" href={site.githubUrl} target="_blank" rel="noreferrer">View source <span className="github-symbol" aria-hidden="true">⌘</span></a><a className="button button--ghost" href={site.nugetUrl} target="_blank" rel="noreferrer">NuGet ↗</a></div>
-            <div id="install"><CopyCommand value={site.install} /></div>
+            <div id="install"><CopyCommand value={site.diInstall} /></div>
           </div>
           <SignalFlow />
         </section>
@@ -153,7 +153,11 @@ function App() {
         </section>
 
         <section className="section" id="packages">
-          <SectionHeading eyebrow="04 · Which packages should I install?" title="Core is the runtime. Everything else extends it." text="Signalynx.Core is the main package for mediator dispatch and bulk processing. Add integration packages only for capabilities such as Microsoft DI, validation, durable messaging, stores, or broker transports." />
+          <SectionHeading
+            eyebrow="04 · Which packages should I install?"
+            title="Choose packages based on where the code runs."
+            text="Use Signalynx.DependencyInjection in Microsoft DI host applications, Signalynx.Abstractions in shared class libraries, or Signalynx.Core directly when you want the mediator runtime without the DI integration. Add validation, messaging, stores, and transports only where required."
+          />
           <div className="install-paths">
             <article><span>MAIN RUNTIME</span><h3>Use Signalynx directly</h3><p>Install Core when you want the mediator runtime and will compose handlers yourself.</p><CopyCommand value={site.install} /></article>
             <div className="path-or">OR</div>
@@ -182,7 +186,7 @@ function App() {
             <div><span className="eyebrow">Before production</span><h3>Signalynx provides the runtime. Your deployment completes the reliability story.</h3></div>
             <ul>
               <li><span>01</span>Use persistent inbox, outbox, and dead-letter stores.</li>
-              <li><span>02</span>Enlist business data and outbox writes in the same transaction.</li>
+              <li><span>02</span>Enlist business data and outbox writes in the same database connection and transaction.</li>
               <li><span>03</span>Make message handlers idempotent and use stable wire names.</li>
               <li><span>04</span>Alert on failures, retries, dead-letter growth, and handler latency.</li>
             </ul>
@@ -195,7 +199,7 @@ function App() {
         </section>
 
         <section className="final-cta">
-          <span className="brand-mark brand-mark--large"><i /><b>S</b><i /></span><p className="eyebrow">START WHERE YOU ARE</p><h2>Start with the mediator.<br />Add durability when the boundary demands it.</h2><CopyCommand value={site.install} /><div className="cta-links"><a href={site.githubUrl} target="_blank" rel="noreferrer">Explore the repository <span>↗</span></a><a href={site.nugetUrl} target="_blank" rel="noreferrer">View on NuGet <span>↗</span></a></div>
+          <span className="brand-mark brand-mark--large"><i /><b>S</b><i /></span><p className="eyebrow">START WHERE YOU ARE</p><h2>Start with the mediator.<br />Add durability when the boundary demands it.</h2><CopyCommand value={site.diInstall} /><div className="cta-links"><a href={site.githubUrl} target="_blank" rel="noreferrer">Explore the repository <span>↗</span></a><a href={site.nugetUrl} target="_blank" rel="noreferrer">View on NuGet <span>↗</span></a></div>
         </section>
       </main>
       <footer><a className="brand" href="#top"><span className="brand-mark"><i /><b>S</b><i /></span>Signalynx</a><p>Typed mediator and durable messaging for .NET 8–10.</p><div><span>MIT License</span><a href={site.githubUrl} target="_blank" rel="noreferrer">GitHub ↗</a><a href={site.nugetUrl} target="_blank" rel="noreferrer">NuGet ↗</a></div></footer>
