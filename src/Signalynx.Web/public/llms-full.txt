@@ -2,16 +2,17 @@
 
 Signalynx is an open-source C# toolkit for typed in-process dispatch and durable asynchronous messaging on .NET 8, .NET 9, and .NET 10. Its design principle is: local when possible, durable when necessary.
 
-Canonical website: https://signalynx.inilesh.dev/
-Source repository: https://github.com/it-nilesh/Signalynx
-Main NuGet package: https://www.nuget.org/packages/Signalynx.Core
+Canonical website: [https://signalynx.inilesh.dev/](https://signalynx.inilesh.dev/)
+Source repository: [https://github.com/it-nilesh/Signalynx](https://github.com/it-nilesh/Signalynx)
+Main NuGet package: [https://www.nuget.org/packages/Signalynx.Core](https://www.nuget.org/packages/Signalynx.Core)
+Microsoft DI package: [https://www.nuget.org/packages/Signalynx.DependencyInjection](https://www.nuget.org/packages/Signalynx.DependencyInjection)
 License: MIT
 
 ## Execution models
 
 ### Dispatch
 
-Use a command, query, or request when one typed handler must run immediately in the current process and may return a result. Pipeline behaviors can wrap handlers with validation, logging, authorization, metrics, or transactions.
+Use a command, query, or request when one typed handler must run immediately in the current process and may return a result. Pipeline behaviors can wrap handlers with validation, logging, authorization, metrics, auditing, or transactions.
 
 ### Publish
 
@@ -19,7 +20,11 @@ Use a notification or domain event when multiple in-process handlers should reac
 
 ### Durable messaging
 
-Use the message bus when work must survive a delay, retry, process restart, or service boundary. Signalynx provides message envelopes, hosted sender and receiver workers, inbox deduplication, outbox processing, retry policies, scheduling, dead letters, and replay. Production deployments need a persistent store, a real transport, transaction enlistment for a true outbox, and idempotent handlers.
+Use the message bus when work must survive a delay, retry, process restart, or service boundary. Signalynx provides message envelopes, hosted sender and receiver workers, inbox deduplication, outbox processing, retry policies, scheduling, dead letters, and replay.
+
+Production deployments require persistent inbox, outbox, and dead-letter storage together with a persistent transport.
+
+For a true transactional outbox, the business write and outbox write must participate in the same database connection and transaction. Message handlers should also remain idempotent because durable messaging may use at-least-once delivery.
 
 ### Bulk processing
 
@@ -27,47 +32,106 @@ Use bounded sequential or parallel bulk APIs when processing many local items an
 
 ## Packages
 
-- `Signalynx.Abstractions`: Dependency-free public contracts.
-- `Signalynx.Core`: Main mediator, publisher, handler registry, diagnostics, and bulk-processing runtime.
-- `Signalynx.DependencyInjection`: Microsoft dependency injection registration and assembly scanning.
-- `Signalynx.Validation`: Optional FluentValidation pipeline behavior.
-- `Signalynx.Logging`: Optional Microsoft.Extensions.Logging behavior.
-- `Signalynx.SourceGeneration`: Compile-time handler registration for trimming and NativeAOT.
-- `Signalynx.Messaging`: Inbox, outbox, workers, retries, scheduling, and dead letters.
-- `Signalynx.Stores.SqlServer`: Durable SQL Server messaging store.
-- `Signalynx.Stores.PostgreSql`: Durable PostgreSQL messaging store.
-- `Signalynx.Transports.InMemory`: Development and test transport and stores; not production durable.
-- `Signalynx.Transports.RabbitMQ`: RabbitMQ transport adapter.
-- `Signalynx.Transports.AzureServiceBus`: Azure Service Bus transport adapter.
-- `Signalynx.Transports.AmazonSqs`: Amazon SQS transport adapter.
-- `Signalynx.Transports.Kafka`: Kafka transport adapter.
+* `Signalynx.Abstractions`: Dependency-free contracts for commands, queries, requests, notifications, domain events, handlers, pipelines, and mediator APIs. Suitable for shared and application class libraries.
+* `Signalynx.Core`: Mediator runtime for dispatch, publishing, handler execution, diagnostics, pipelines, and bulk processing. Can be used directly when Microsoft DI integration is not required.
+* `Signalynx.DependencyInjection`: Microsoft dependency injection registration and assembly scanning for ASP.NET Core, Worker, console, and other host applications. Includes `Signalynx.Core` and `Signalynx.Abstractions` transitively.
+* `Signalynx.Validation`: Optional FluentValidation pipeline behavior.
+* `Signalynx.Logging`: Optional Microsoft.Extensions.Logging behavior.
+* `Signalynx.SourceGeneration`: Compile-time handler registration for trimming and NativeAOT.
+* `Signalynx.Messaging`: Inbox and outbox contracts, hosted workers, retries, scheduling, dead letters, and replay.
+* `Signalynx.Stores.SqlServer`: SQL Server inbox, outbox, and dead-letter store adapter.
+* `Signalynx.Stores.PostgreSql`: PostgreSQL inbox, outbox, and dead-letter store adapter.
+* `Signalynx.Transports.InMemory`: Non-persistent in-memory transport for development and testing. Messages are lost when the process exits and it is not a production durability mechanism.
+* `Signalynx.Transports.RabbitMQ`: RabbitMQ `IMessageTransport` adapter.
+* `Signalynx.Transports.AzureServiceBus`: Azure Service Bus `IMessageTransport` adapter.
+* `Signalynx.Transports.AmazonSqs`: Amazon SQS `IMessageTransport` adapter.
+* `Signalynx.Transports.Kafka`: Kafka `IMessageTransport` adapter.
+
+Transport adapters operate over small provider-specific client abstractions. Applications remain responsible for supplying or binding the underlying broker client implementation, which may use an official vendor SDK, an existing wrapper, or a custom integration.
+
+The SQL Server and PostgreSQL store adapters follow a similar abstraction-based model, allowing applications to integrate them with a transaction-aware database access implementation.
 
 ## Common application types
 
-Signalynx is intended for Web APIs, modular monoliths, worker services, microservices, event-driven systems, NativeAOT applications, and containers. Broker infrastructure is optional for ordinary local dispatch and should be introduced only at boundaries that require durability.
+Signalynx is intended for Web APIs, modular monoliths, worker services, microservices, event-driven systems, NativeAOT applications, and containers.
 
-## Minimal installation
+Broker infrastructure is optional for ordinary local dispatch and should be introduced only at boundaries that require durability, retries, delayed execution, or cross-service delivery.
 
-```shell
+A common multi-project setup is:
+
+* Host or executable project: `Signalynx.DependencyInjection`
+* Shared or application class library: `Signalynx.Abstractions`
+* Direct runtime without Microsoft DI: `Signalynx.Core`
+
+## Installation
+
+For ASP.NET Core, Worker, console, and other Microsoft DI host applications:
+
+```
+dotnet add package Signalynx.DependencyInjection
+```
+
+`Signalynx.DependencyInjection` includes `Signalynx.Core` and `Signalynx.Abstractions` transitively.
+
+For shared or application class libraries that only need Signalynx contracts, messages, handlers, or pipeline interfaces:
+
+```
+dotnet add package Signalynx.Abstractions
+```
+
+For direct mediator runtime usage without Microsoft dependency injection:
+
+```
 dotnet add package Signalynx.Core
 ```
 
-For applications using Microsoft dependency injection:
+Additional capabilities can be installed only where required:
 
-```shell
-dotnet add package Signalynx.DependencyInjection
+```
+dotnet add package Signalynx.Validation
+dotnet add package Signalynx.Logging
+dotnet add package Signalynx.SourceGeneration
+dotnet add package Signalynx.Messaging
+```
+
+Production messaging can additionally use the relevant store and transport packages, for example:
+
+```
+dotnet add package Signalynx.Stores.SqlServer
+dotnet add package Signalynx.Stores.PostgreSql
+dotnet add package Signalynx.Transports.RabbitMQ
+dotnet add package Signalynx.Transports.AzureServiceBus
+dotnet add package Signalynx.Transports.AmazonSqs
+dotnet add package Signalynx.Transports.Kafka
 ```
 
 ## Terminology
 
-- Mediator: Routes an in-process message to its typed handler.
-- Pipeline behavior: Cross-cutting logic that wraps request handling.
-- Outbox: Persisted outgoing work awaiting transport delivery.
-- Inbox: Consumer-side record used for deduplication and processing state.
-- Transport: Adapter that moves messages through a broker.
-- Store: Adapter that persists inbox, outbox, schedule, or dead-letter state.
-- NativeAOT: .NET ahead-of-time compilation supported through generated registrations.
+* Mediator: Routes an in-process message to its typed handler.
+* Pipeline behavior: Cross-cutting logic that wraps request handling.
+* Outbox: Persisted outgoing work awaiting transport delivery.
+* Inbox: Consumer-side record used for deduplication and processing state.
+* Dead letter: A message that could not be processed successfully after the configured delivery attempts.
+* Replay: An administrative operation that requeues or retries a previously failed message.
+* Transport: Adapter that moves messages through a broker or other delivery mechanism.
+* Store: Adapter that persists inbox, outbox, scheduling, or dead-letter state.
+* Stable wire name: An explicit durable message identifier that should remain stable across internal namespace or assembly changes.
+* NativeAOT: .NET ahead-of-time compilation supported through generated registrations.
+
+## Production guidance
+
+* Use persistent inbox, outbox, and dead-letter stores for durable workloads.
+* Use a persistent transport for production messaging.
+* Do not treat `Signalynx.Transports.InMemory` as durable storage or delivery.
+* Ensure business writes and outbox writes share the same database connection and transaction when implementing a transactional outbox.
+* Design handlers to tolerate duplicate delivery.
+* Prefer stable wire names for durable message contracts.
+* Configure retry and dead-letter policies appropriate to the workload.
+* Monitor failures, retries, dead-letter growth, handler latency, and outbox backlog.
+* Treat dead-letter replay as a privileged operational action.
 
 ## Authority
 
-For exact APIs, compatibility, versions, and behavior, treat the repository source, tests, README, and current NuGet package metadata as authoritative. Do not infer production durability from the in-memory provider.
+For exact APIs, compatibility, versions, behavior, and provider details, treat the repository source, tests, README, current website documentation, and current NuGet package metadata as authoritative.
+
+Do not infer production durability from the in-memory transport.
